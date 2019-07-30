@@ -1,10 +1,9 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Globalization;
+using System.Linq;
 
 namespace TEST_Skanuj_to
 {
@@ -15,43 +14,55 @@ namespace TEST_Skanuj_to
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
 
         public static string _tokenS; //token połączenia
-        public static int _idCompany; // id firmy do pobrania
+        public static int _idCompany; // id firmy wgrywającej dane = KRGroup
         public static int _idDocument; //id dokumentu do pobrania 8185910
 
+        public static int _idContraktor;//id firmy z dokumentu do pobrania
+        public static string _nameContractor; //nazwa firmy z dokumentu
+        public static int _statusDoc = 1; //0 domyślny 1 wyeksportowany
+        public static int _stateDoc = 2;//Stan: 2 - zweryfikowane, 3 - do weryfikacji
+
         //miesiąc księgowy(obsługiwany format "yyyyy-MM", np. "2016-11")
-        static DateTime date = new DateTime(2019, 06, 13);
-        public static string _month = date.ToString("yyyy-MM", DateTimeFormatInfo.InvariantInfo);
+        //static DateTime date = new DateTime(2019, 06, 01);
+        //public static string _month = date.ToString("yyyy-MM", DateTimeFormatInfo.InvariantInfo);
+
+        //public static string _month1 = DateTime.Now.ToString("yyyy-MM", DateTimeFormatInfo.InvariantInfo); //obecna data
 
         static void Main(string[] args)
         {
             Program program = new Program();
-            program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092");
-            _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;
 
-            program.getCompany();//Pobranie danych firmy
+            _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;// pobiera token.
+            program.getUserCompany();//Pobranie danych firmy
+            program.getCompanyId();// zwraca _idCompany //id user(kr group) 7085933
+                                   // program.uploadDocument(_idCompany, _fileName, _path, _multi); //OK wgranie dokumentu.
 
-            program.getCompanyId();// zwraca _idCompany
-            //Console.WriteLine("id test " + _idCompany.ToString()); //id user(kr group) 7085933
+            //program.GetAllDocumentList();
+
+            //program.GetExportedDocumentList(_statusDoc);// dokumenty wyeksportowane
+
+            //program.GetVeryfikatedDocumentList(_stateDoc); // dokumenty gotowe do pobrania
+
+            program.GetLastIdDocumentFromList(); //OK pobiera dane z ostatniego wgranego dokumentu
+            Console.WriteLine("id ostatniego wgranego dokumentu " + _idDocument);
+
+           // Console.WriteLine("wejście dla _idCompany " + _idCompany.ToString()); //company_id 7085933 data.id-> 8185904
+           // program.GetIdDocumentList(_idCompany);
+
+            //program.getDocumentId(_idCompany, _fileName, _path, _multi);
+            //Console.WriteLine("getDocumentId()" + _idDocument.ToString());//id dokumentu
 
 
-            program.uploadDocument(_idCompany, _fileName, _path, _multi); //OK wgranie dokumentu.
-            //Console.WriteLine("miesiac księgowy "+_month);
 
-            program.getDocumentId(_idCompany, _fileName, _path, _multi);
-           
-            
+            //program.GetDocumentById(_idDocument); //
+            //Console.WriteLine("GetDocumentById(" + _idDocument + ")");
 
-            //TODO getDocumentId();
-            // program.GetIdListByCmpID(_idCompany, _month);
-            //program.getDocumentId(_idCompany, _month);
-            Console.WriteLine(_idDocument);//id dokumentu do pobrania "doc_id":8327757
+            //TODO           program.DeleteDocument(_idDocument, _idCompany);
+            //Console.WriteLine("GetIdListByCmpID(_idCompany, _month)");
+            //program.GetIdListByCmpID(_idCompany, _month); //pobiera listę dokumentów po _idCompany z danego miesiąca rozliczeniowego.
 
-
-
-            //program.GetDocumentById(_idDocument); //OK
-
+            //Console.WriteLine("GetCompanyLists(_idCompany)");
             //program.GetCompanyLists(_idCompany);
-
         }//Main
 
 
@@ -67,10 +78,12 @@ namespace TEST_Skanuj_to
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest("auth", RestSharp.Method.POST);
             request.AddParameter("email", "w.radzikowski@krgroup.pl");
-            request.AddParameter("apikey", "5cfa2f8d51092"); //klucz API 5cfa2f8d51092
+            request.AddParameter("apikey", "5cfa2f8d51092"); //klucz API 5cfa2f8d51092 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
-            Console.WriteLine(content);// odpowiedz
+            _tokenS = content;
+
+            Console.WriteLine("GetToken ->" + _tokenS.ToString());// odpowiedz
 
             return Execute<Token>(request);
         }//public Token GetToken(string email, string apikey)
@@ -85,10 +98,10 @@ namespace TEST_Skanuj_to
         }//Token
 
         /// <summary>
-        /// Pobiera dane firmy
+        /// Pobiera dane firmy: praca w kontekście firm.
         /// </summary>
-        /// <returns></returns>
-        public SkApiResponse getCompany()
+        /// <returns>Dane firmy: id, nip, dir_name, dbname</returns>
+        public SkApiResponse getUserCompany()
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest("user", RestSharp.Method.POST);
@@ -98,15 +111,16 @@ namespace TEST_Skanuj_to
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
-            Console.WriteLine(content);// odpowiedz
+
+            Console.WriteLine("getUserCompany _tokenS -> " + content);// odpowiedz
 
             return Execute<SkApiResponse>(request);
-        }//getCompany()
+        }//getUserCompany()
 
         /// <summary>
         /// Podiera _idCompany
         /// </summary>
-        /// <returns></returns>
+        /// <returns>_idCompany</returns>
         public SkApiResponse getCompanyId()
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -122,11 +136,12 @@ namespace TEST_Skanuj_to
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
             var JsonArrayString = content;
+
             JArray jArray = JArray.Parse(JsonArrayString);
             dynamic data = JObject.Parse(jArray[0].ToString());
             Console.WriteLine("_idCompany -> " + data.id);
             _idCompany = data.id;
-            request.AddQueryParameter("id", _idCompany.ToString());
+            request.AddQueryParameter("getCompanyId() id ->", _idCompany.ToString());
 
             return Execute<SkApiResponse>(request);
         }// getCompanyId()
@@ -139,7 +154,7 @@ namespace TEST_Skanuj_to
         /// <param name="file_name"></param>
         /// <param name="path"></param>
         /// <param name="multi"></param>
-        /// <returns></returns>
+        /// <returns>uploadDocument</returns>
         public SkApiResponse uploadDocument(int company_id, string file_name, string path, bool multi)
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -156,11 +171,54 @@ namespace TEST_Skanuj_to
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
+            var JsonArrayString = content;
             Console.WriteLine(content);// odpowiedz
+
+            dynamic data = JObject.Parse(JsonArrayString);
+            _idDocument = (data["good-uploads"][0]["doc_id"]);
+            //Console.WriteLine("_idDocument -> " + data["good-uploads"][0]["doc_id"]); //[JSON].good-uploads.[0].doc_id
+            Console.WriteLine("uploadDocument - _idDocument -> " + (_idDocument).ToString());
+
+            //request.AddQueryParameter("doc_id" + _idDocument.ToString());
 
             return Execute<SkApiResponse>(request);
 
         }//SkApiResponse
+
+
+        //TODO zrób delete
+        public SkApiResponse DeleteDocument(int idDoc, int status)
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+
+            var request = new RestRequest(Method.DELETE);
+            request.Resource = "document?id=NN";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idCompany.ToString());
+
+            request.AddParameter("mode", "change-status", ParameterType.GetOrPost);
+            //request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
+            request.AddParameter("state", _stateDoc, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            Console.WriteLine(content);// odpowiedz
+
+            dynamic data = JObject.Parse(JsonArrayString);
+            _idDocument = (data["good-uploads"][0]["doc_id"]);
+            //Console.WriteLine("_idDocument -> " + data["good-uploads"][0]["doc_id"]); //[JSON].good-uploads.[0].doc_id
+            Console.WriteLine("uploadDocument - _idDocument -> " + (_idDocument).ToString());
+
+            //request.AddQueryParameter("doc_id" + _idDocument.ToString());
+
+            return Execute<SkApiResponse>(request);
+
+        }//SkApiResponse
+
+
+
+
 
         /// <summary>
         /// Zwraca Id wgranego dokumentu.
@@ -169,7 +227,7 @@ namespace TEST_Skanuj_to
         /// <param name="file_name"></param>
         /// <param name="path"></param>
         /// <param name="multi"></param>
-        /// <returns></returns>
+        /// <returns>_idDocument</returns>
         public SkApiResponse getDocumentId(int company_id, string file_name, string path, bool multi)
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -184,27 +242,68 @@ namespace TEST_Skanuj_to
             request.AddParameter("source", "integracja", ParameterType.GetOrPost);
             request.AddFile(file_name, path);
 
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+
+            dynamic data = JObject.Parse(JsonArrayString);
+
+            _idDocument = (data["good-uploads"][0]["doc_id"]);
+            Console.WriteLine("_idDocument -> " + data["good-uploads"][0]["doc_id"]); //[JSON].good-uploads.[0].doc_id
+
+            Console.WriteLine("getDocumentId - _idDocument -> " + _idDocument);
+
+            foreach (var prop in data["good-uploads"])
+                Console.WriteLine("_idDocument w pętli-> " + prop["doc_id"]);
+
+            request.AddQueryParameter("doc_id", _idDocument.ToString());
+
+            return Execute<SkApiResponse>(request);
+        }//getDocumentId(int company_id, string file_name, string path, bool multi)
+
+        
+
+
+        //"doc_id":8340588
+
+
+        /// <summary>
+        /// Zwraca czy dokument został zaczytany do systemu.
+        /// </summary>
+        /// <param name="file_name"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public SkApiResponse getIfDocumentIsValidated(string file_name, string path)
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+
+            var request = new RestRequest(Method.POST);
+            request.Resource = "document";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("id", _idCompany.ToString());
+            request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
+            request.AddParameter("source", "integracja", ParameterType.GetOrPost);
+            request.AddFile(file_name, path);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
             var JsonArrayString = content;
-            
+
             dynamic data = JObject.Parse(JsonArrayString);
-            _idDocument = (data["good-uploads"][0]["doc_id"]) -1;
+            _idDocument = (data["good-uploads"][0]["validated"]);
             //Console.WriteLine("_idDocument -> " + data["good-uploads"][0]["doc_id"]); //[JSON].good-uploads.[0].doc_id
-            Console.WriteLine("_idDocument -> " + _idDocument);
-            
+            Console.WriteLine("getDocumentId - _idDocument -> " + _idDocument);
+
             //foreach (var prop in data["good-uploads"])
-            //    Console.WriteLine("_idDocument x pętli-> " + prop["doc_id"]);
-           
+            // Console.WriteLine("_idDocument w pętli-> " + prop["doc_id"]);
+
             request.AddQueryParameter("doc_id", _idDocument.ToString());
 
             return Execute<SkApiResponse>(request);
         }//getDocumentId(int company_id, string file_name, string path, bool multi)
 
 
-       
-
+        //Gettery i settery do uploadDocument
         public class Rootobject
         {
             public GoodUploads[] gooduploads { get; set; }
@@ -300,8 +399,21 @@ namespace TEST_Skanuj_to
          * "notice":"file_already_exists",
          * "message_text":"Taki dokument zosta\u0142 ju\u017c dodany.",
          * "doc_id":8327957,"state":5}],
-         * 
-         * "bad-uploads":[],"notices":[],"page_path":"\/var\/www\/skanuj_to-git\/public\/frontend\/user-files\/e70ebc12a0d9ded769a90bcdbbb20c9a\/1ab160b8eda95316b4c206f736e2f5a5","page_info":{"name":"TEST.PDF","type":-1,"tmp_name":"\/tmp\/phpHX1uIU","error":0,"size":"300578","options":{"ignoreNoFile":false,"useByteString":true,"magicFile":null,"detectInfos":true},"validated":false,"received":false,"filtered":false,"validators":["Zend_Validate_File_Upload","Zend_Validate_File_Extension"],"destination":"\/var\/www\/skanuj_to-git\/public\/frontend\/user-files\/e70ebc12a0d9ded769a90bcdbbb20c9a\/temp","file_extension":"PDF","hash":"1ab160b8eda95316b4c206f736e2f5a5","user_id":7082762,"uploaded_date":"now()","uploaded_type":1,"raw_path":"\/var\/www\/skanuj_to-git\/public\/frontend\/user-files\/e70ebc12a0d9ded769a90bcdbbb20c9a\/1ab160b8eda95316b4c206f736e2f5a5","notice":"file_already_exists","message_text":"Taki dokument zosta\u0142 ju\u017c dodany."}} */
+         * "bad-uploads":[],
+         * "notices":[],"page_path":"\/var\/www\/skanuj_to-git\/public\/frontend\/user-files\/e70ebc12a0d9ded769a90bcdbbb20c9a\/1ab160b8eda95316b4c206f736e2f5a5",
+         * "page_info":{"name":"TEST.PDF","type":-1,"tmp_name":"\/tmp\/phpHX1uIU","error":0,"size":"300578",
+         * "options":{"ignoreNoFile":false,"useByteString":true,"magicFile":null,"detectInfos":true},
+         * "validated":false,
+         * "received":false,
+         * "filtered":false,
+         * "validators":["Zend_Validate_File_Upload","Zend_Validate_File_Extension"],
+         * "destination":"\/var\/www\/skanuj_to-git\/public\/frontend\/user-files\/e70ebc12a0d9ded769a90bcdbbb20c9a\/temp",
+         * "file_extension":"PDF","hash":"1ab160b8eda95316b4c206f736e2f5a5",
+         * "user_id":7082762,
+         * "uploaded_date":"now()",
+         * "uploaded_type":1,
+         * "raw_path":"\/var\/www\/skanuj_to-git\/public\/frontend\/user-files\/e70ebc12a0d9ded769a90bcdbbb20c9a\/1ab160b8eda95316b4c206f736e2f5a5",
+         * "notice":"file_already_exists","message_text":"Taki dokument zosta\u0142 ju\u017c dodany."}} */
 
 
 
@@ -325,6 +437,8 @@ namespace TEST_Skanuj_to
             {
                 request.AddParameter("id", _idCompany, ParameterType.HttpHeader); //w każdym zapytaniu
             }
+            if (!string.IsNullOrEmpty("id"))
+                { request.AddParameter("id", _idDocument, ParameterType.HttpHeader); }
             var response = client.Execute<T>(request);
             if (response.ErrorException != null)
             {
@@ -362,46 +476,17 @@ namespace TEST_Skanuj_to
 
         //}
 
-
-        string _identstrERP;// rodzaj integracji z systemem ERP.Dostępne wartości: optima, symfonia, symfoniamk, rakssql, lefthand, waprofakir, waprokaper, rachmistrzgt, rewizorgt, fakt, dgcs, r2fk, r2k, buchalter, tema, rzeczpospolitaMK, symfoniaForte, edi, impuls, varico,
-        int _parametrCountDoc;// count określa liczbę dokumentów pobranych jednorazowo
-                              //company_id - id firmy, której dokumenty chcemy pobrać
-
-
-        //Funkcja pobierająca listę dokumentów dla wszystkich firm:
-        //public List<DocumentList> GetDocumentsList(string month, string identstr = "")
-        //{
-        //    var request = new RestRequest();
-        //    request.Resource = "document";
-        //    request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-        //    if (month != "Wybierz")
-        //    {
-        //        request.AddParameter("month", month, ParameterType.GetOrPost);
-        //    }
-        //    request.AddParameter("count", 350, ParameterType.GetOrPost);
-        //    if (identstr != "")
-        //    {
-        //        return Execute<List<DocumentList>>(request, identstr);
-        //    }
-        //    else
-        //    {
-        //        return Execute<List<DocumentList>>(request);
-        //    }
-        //}
-
-
+       
+       
         //OK pobranie listy dokumentów w obrębie 1 firmy.
-        public List<DocumentList> GetDocumentsListByCmpID(int company_id, string month)
+        public List<DocumentList> GetDocumentsListByCmpID(int company_id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-            if (month != "Wybierz")
-            {
-                request.AddParameter("month", _month.ToString(), ParameterType.GetOrPost);
-            }
+           
             request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
             request.AddParameter("count", 350, ParameterType.GetOrPost);
 
@@ -411,6 +496,8 @@ namespace TEST_Skanuj_to
 
             return Execute<List<DocumentList>>(request);
         }//GetDocumentsListByCmpID
+
+
 
         /*
         [{"id":8185917,"hash":"cb5c2a1727489e9ef8ce8d94ac1ddc1f","type":2,"verified_at":"2019-07-01 11:54:57.20007","last_modified":"2019-07-01 11:54:57.20007",
@@ -505,21 +592,200 @@ namespace TEST_Skanuj_to
             Console.WriteLine(content);// odpowiedz
 
             return Execute<SkApiResponse>(request);
-        }//getCompany()
+        }//getUserCompany()
+
+        /// <summary>
+        /// Pobiera listę wszystkich dokumentów dokumentów 
+        /// </summary>
+        /// <param name="company_id"></param>
+        /// <param name="month"></param>
+        /// <returns></returns>
+        public List<DocumentList> GetAllDocumentList()
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document/mode/all";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idCompany.ToString());
+
+            //request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
+            request.AddParameter("count", 3, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            JArray jArray = JArray.Parse(JsonArrayString);
+            dynamic data = JObject.Parse(jArray[0].ToString());
+            //Console.WriteLine("data.id -> " + data.id);
+            //_idDocument = data.id;
+            request.AddQueryParameter("id", _idDocument.ToString());
+           
+            Console.WriteLine("GetAllDocumentList() -> " + content);// odpowiedz
+
+            return Execute<List<DocumentList>>(request);
+        }//GetDocumentList
+
+        /// <summary>
+        /// Zwraca dane ostatniego wgranego dokumentu.
+        /// </summary>
+        /// <returns></returns>
+        public List<DocumentList> GetLastIdDocumentFromList()
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document/mode/all";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idCompany.ToString());
+
+           // request.AddParameter("count", 3, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            JArray jArray = JArray.Parse(JsonArrayString);
+            dynamic data = JObject.Parse(jArray[0].ToString()); // 
+            int dlugosc = data.all_count;
+            dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString()); 
+
+            Console.WriteLine("kontraktor.id " + data1.contractor.id + "data.id -> " + data1.id); //pierwszy z listy
+            _idDocument = data1.id; //id dokumentu
+            _idContraktor = data1.contractor.id;
+            _idCompany = data1.company_id;
+            _nameContractor = data1.contractor.name;
+            Console.WriteLine("nazwa kontraktor-> " + data1.contractor.name);
+            Console.WriteLine("data-> " + data1.contractor.name);
+            Console.WriteLine("uploaded_date" + data1.uploaded_date);
+
+            request.AddQueryParameter("status", _statusDoc.ToString());
+            //Console.WriteLine("GetIdDocumentList -> " + content);// odpowiedz
+            return Execute<List<DocumentList>>(request);
+        }//GetExportedDocumentList
+
+        //{"id":8185917,"user_id":7082762,
+
+        // OK Pobiera pojedyńcze dane
+        public List<DocumentList> GetIdDocumentList(int id) 
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document/mode/all";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idCompany.ToString());
+
+            request.AddParameter("id", id, ParameterType.HttpHeader);
+            //request.AddParameter("count", 3, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            JArray jArray = JArray.Parse(JsonArrayString);
+            dynamic data = JObject.Parse(jArray[0].ToString()); // 
+            int dlugosc = data.all_count;
+            //company_id 7085933 data.id -> 8185904
+            Console.WriteLine("kontraktor.id " + data.contractor.id  + "data.id -> " + data.id); //pierwszy z listy
+            _idDocument = data.id;
+            _idContraktor = data.contractor.id;
+            _idCompany = data.company_id;
+            _nameContractor = data.contractor.name;
+            Console.WriteLine("nazwa kontraktor-> " + data.contractor.name);
+            Console.WriteLine("data-> " + data.contractor.name);
+            Console.WriteLine("uploaded_date" + data.uploaded_date);
+       
+            dynamic data1 = JObject.Parse(jArray[dlugosc-1].ToString()); // 
+
+            Console.WriteLine("kontraktor.id " + data1.contractor.id + "data.id -> " + data1.id); //pierwszy z listy
+            _idDocument = data1.id;
+            _idContraktor = data1.contractor.id;
+            _idCompany = data1.company_id;
+            _nameContractor = data1.contractor.name;
+            Console.WriteLine("nazwa kontraktor-> " + data1.contractor.name);
+            Console.WriteLine("data-> " + data1.contractor.name);
+            Console.WriteLine("uploaded_date" + data1.uploaded_date);
+
+            //kontraktor.id 9969821data.id -> 8185917
+            //nazwa kontraktor-> GRUPA MARCOVA POLSKA OFFICE SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ SPÓŁKA KOMANDYTOWA
+
+
+            /*kontraktor.id 9969820data.id -> 8185908
+nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
+
+            request.AddQueryParameter("id", id.ToString());
+            request.AddQueryParameter("status", _statusDoc.ToString());
+
+            Console.WriteLine("GetIdDocumentList -> " + content);// odpowiedz
+
+            return Execute<List<DocumentList>>(request);
+        }//GetExportedDocumentList
 
 
 
-        public List<DocumentList> GetIdListByCmpID(int company_id, string month)
+
+        public List<DocumentList> GetExportedDocumentList(int status)
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document/mode/search";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idCompany.ToString());
+            
+
+            request.AddParameter("status", _statusDoc, ParameterType.HttpHeader);
+            request.AddParameter("count", 3, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            JArray jArray = JArray.Parse(JsonArrayString);
+            dynamic data = JObject.Parse(jArray[0].ToString());
+
+            //Console.WriteLine("data.id -> " + data.id);
+            //_idDocument = data.id;
+
+            request.AddQueryParameter("id", _idDocument.ToString());
+            request.AddQueryParameter("status", _statusDoc.ToString());
+
+            Console.WriteLine("GetExportedDocumentList -> " + content);// odpowiedz
+
+            return Execute<List<DocumentList>>(request);
+        }//GetExportedDocumentList
+
+
+        public List<DocumentList> GetVeryfikatedDocumentList(int state)
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document/mode/search";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idCompany.ToString());
+
+            request.AddParameter("state", _stateDoc, ParameterType.HttpHeader);
+            request.AddParameter("count", 3, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            JArray jArray = JArray.Parse(JsonArrayString);
+            dynamic data = JObject.Parse(jArray[0].ToString());
+            //Console.WriteLine("data.id -> " + data.id);
+            //_idDocument = data.id;
+            request.AddQueryParameter("id", _idDocument.ToString());
+            request.AddQueryParameter("state", _stateDoc.ToString());
+
+            Console.WriteLine("GetVeryfikatedDocumentList -> " + content);// odpowiedz
+
+            return Execute<List<DocumentList>>(request);
+        }//GetVeryfikatedDocumentList
+
+
+
+        public List<DocumentList> GetIdListByCmpID(int company_id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-            if (month != "Wybierz")
-            {
-                request.AddParameter("month", _month.ToString(), ParameterType.GetOrPost);
-            }
+            
             request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
             request.AddParameter("count", 3, ParameterType.GetOrPost);
 
@@ -528,8 +794,8 @@ namespace TEST_Skanuj_to
             var JsonArrayString = content;
             JArray jArray = JArray.Parse(JsonArrayString);
             dynamic data = JObject.Parse(jArray[0].ToString());
-            Console.WriteLine("_idDokument -> " + data.id);
-            _idDocument = data.id;
+            //Console.WriteLine("data.id -> " + data.id);
+            //_idDocument = data.id;
             request.AddQueryParameter("id", _idDocument.ToString());
 
 
@@ -542,19 +808,15 @@ namespace TEST_Skanuj_to
 
 
 
-        //
-        public List<DocumentList> GetIdList(int company_id, string month)
+       
+        public List<DocumentList> GetIdList(int company_id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-            if (month != "Wybierz")
-            {
-                request.AddParameter("month", _month.ToString(), ParameterType.GetOrPost);
-            }
-            request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
+                        request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
             request.AddParameter("count", 3, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
@@ -562,12 +824,10 @@ namespace TEST_Skanuj_to
             var JsonArrayString = content;
             JArray jArray = JArray.Parse(JsonArrayString);
             dynamic data = JObject.Parse(jArray[0].ToString());
-            Console.WriteLine("_idDokument -> " + data.id);
+            Console.WriteLine("_idDokument z GetIdLis -> " + data.id);
             _idDocument = data.id;
             request.AddQueryParameter("id", _idDocument.ToString());
 
-
-
             Console.WriteLine(content);// odpowiedz
 
             return Execute<List<DocumentList>>(request);
@@ -576,67 +836,8 @@ namespace TEST_Skanuj_to
 
 
 
-        // pobranie id wysłanego dokumentu
-        public SkApiResponse getDocumentId(int company_id, string month)
-        {
-            var client = new RestClient("http://app.skanuj.to/api");
-            var request = new RestRequest("document", RestSharp.Method.POST);
-            request.AddHeader("token", _tokenS.ToString());
-            request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-            if (month != "Wybierz")
-            {
-                request.AddParameter("month", _month.ToString(), ParameterType.GetOrPost);
-            }
-            request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
-            request.AddParameter("count", 350, ParameterType.GetOrPost);
-
-            IRestResponse restResponse = client.Execute(request);
-            var content = restResponse.Content;
-            var JsonArrayString = content;
-
-            var obj = JObject.Parse(content);
 
 
-            JObject jObject = JObject.Parse(content);
-            Console.WriteLine("id ---> " + jObject["id"]);
-
-            //zwraca 0
-            //IRestResponse restResponse = client.Execute(request);
-            //var content = restResponse.Content;
-            //var JsonArrayString = content;
-            ////Newtonsoft.Json.JsonReaderException: „Error reading JArray from JsonReader. Current JsonReader item is not an array: StartObject. Path '', line 1, position 1.”
-            //var result = JsonConvert.DeserializeObject<DocumentList>(JsonArrayString);
-            //Console.WriteLine("_idDokumentu -> " + result.id);
-            //_idDocument = result.id;
-            //request.AddQueryParameter("id", _idDocument.ToString());
-
-            return Execute<SkApiResponse>(request);
-        }// getCompanyId()
-
-
-        /*
-        public List<DocumentList> GetDocumentsListByCmpID(int company_id, string month)
-        {
-            var client = new RestClient("http://app.skanuj.to/api");
-            var request = new RestRequest();
-            request.Resource = "document";
-            request.AddHeader("token", _tokenS.ToString());
-            request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-            if (month != "Wybierz")
-            {
-                request.AddParameter("month", _month.ToString(), ParameterType.GetOrPost);
-            }
-            request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
-            request.AddParameter("count", 350, ParameterType.GetOrPost);
-
-            IRestResponse restResponse = client.Execute(request);
-            var content = restResponse.Content;
-            Console.WriteLine(content);// odpowiedz
-            return Execute<List<DocumentList>>(request);
-        }//GetDocumentsListByCmpID
-        */
-
-        //TODO dodawanie firmy
         /// <summary>
         /// Dodanie firmy dla prawidłowego rozpoznania dokumentów.
         /// </summary>
@@ -693,18 +894,19 @@ namespace TEST_Skanuj_to
 
 
 
-        // // // // // // Funkcja pobierająca dane pojedynczego dokumentu
+        // // // // // // Funkcja pobierająca dane pojedynczego dokumentu - odpowiedz JSON
         public DocumentOneXt GetDocumentById(int id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("doc_id", _idDocument.ToString());
             request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
             request.AddParameter("id", id, ParameterType.GetOrPost);
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
-            Console.WriteLine(content);// odpowiedz
+            Console.WriteLine("GetDocumentById ->" + content);// odpowiedz
 
             return Execute<DocumentOneXt>(request);
         }// GetDocumentById(int id)
@@ -744,10 +946,8 @@ namespace TEST_Skanuj_to
          * "file_path":"https:\/\/app.skanuj.to\/customer\/get-pdf\/hash\/05c6e4602d8d4ae3c84928dfbd5e3d57\/id\/8185910",
          * "file_path_hq":"https:\/\/app.skanuj.to\/customer\/get-pdf\/hash\/05c6e4602d8d4ae3c84928dfbd5e3d57\/id\/8185910",
          *
-         * 
          * "contractor":{"id":9969824,"name":"\"LINDSTROM\" SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104","country_code":"PL","nip":"PL5222640524",
          * "address":"ul. Marywilska 34","akronim":"\"LINDSPL52226405WARSZAWA","city":"Warszawa","country":"","post_code":"03-228", "post_code_sane":"03228","extra":"","incidental":0},
-         * 
          * 
          * "attributes":{"NrFaktury":{"attribute_id":1,"value":"3830097","is_valid":"1","status":2,"left":"425","top":"318","right":"513","bottom":"335","page":0,"aspect_ratio":"3.24","user_id":7082762},
          * "SprzedawcaNazwa":{"attribute_id":2,"value":"\"LINDSTROM\" SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104","is_valid":"1","status":0,"left":"46","top":"1031","right":"136","bottom":"1040","page":0,"aspect_ratio":"3.24","user_id":null},
