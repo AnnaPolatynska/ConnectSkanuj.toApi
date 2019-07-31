@@ -3,6 +3,7 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 
 namespace TEST_Skanuj_to
@@ -184,6 +185,66 @@ namespace TEST_Skanuj_to
             return Execute<SkApiResponse>(request);
 
         }//SkApiResponse
+
+        public void WriteDocToFile(int idDoc)
+        {
+            // końcowa nazwa pliku
+            string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();//"Test.pdf";
+            // katalog wyników
+            string _endPath = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
+
+            if (!Directory.Exists(_endPath))
+            {
+                Directory.CreateDirectory(_endPath);
+            }
+
+            if (!File.Exists(_endFileName))
+            {
+                try
+                {
+                    //CreateDocument(enfFilePath)
+                    WriteToFile("Utworzono dokument " + _fileName);
+                }
+                catch { WriteToFile("Problem z utworzeniem dokumentu " + _fileName); }
+            }
+            else
+            {
+                try
+                {
+                    //CreateDocument(enfFilePath)}
+                    WriteToFile("Utworzono dokument " + _fileName);
+                }
+                catch { WriteToFile("Problem z utworzeniem dokumentu " + _fileName); }
+            }
+
+        }//WriteToFile
+
+        public void WriteToFile(string Message)
+        {
+            string path = AppDomain.CurrentDomain.BaseDirectory + "\\ArchiwumX";
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            string logFilepath = AppDomain.CurrentDomain.BaseDirectory + "\\ArchiwumX\\ServiceLog.txt";
+            if (!File.Exists(logFilepath))
+            {
+                // Stworzenie pliku do zapisu.   
+                using (StreamWriter sw = File.CreateText(logFilepath))
+                {
+                    sw.WriteLine(Message);
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(logFilepath))
+                {
+                    sw.WriteLine(Message);
+                }
+            }
+        }// WriteToFile(string Message)
+
 
 
         //TODO zrób delete
