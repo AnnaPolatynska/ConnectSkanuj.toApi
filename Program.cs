@@ -2,26 +2,38 @@
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 
 namespace TEST_Skanuj_to
 {
     class Program
     {
-        static string _fileName = "Test.pdf";
-        static string _path = "C:/Users/polann/Desktop/pliki_do_konectora/Test.pdf";
+        static string _fileName = System.Configuration.ConfigurationManager.AppSettings["fileName"].ToString();//"Test.pdf";//"Test.pdf";
+        static string _path = System.Configuration.ConfigurationManager.AppSettings["path"].ToString() + _fileName; //C:\\Konektora "C:/Users/polann/Desktop/pliki_do_konectora/Test.pdf";
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
 
-        public static string _tokenS; //token połączenia
-        public static int _idCompany; // id firmy wgrywającej dane = KRGroup
         public static int _idDocument; //id dokumentu do pobrania 8185910
+        public static string _documentName; //nazwa wgranego dokumentu
+        public static string _uploadDate;// Data wgrania dokumentu
+        public static string _notice;
+        //user
+        public static string _tokenS; //token połączenia
+        public static int _idUser; // id firmy wgrywającej dane = KRGroup: 7082762
+        public static int _nipUserCompany; //Nip kr group
+        public static string _nameUserCompany;
 
-        public static int _idContraktor;//id firmy z dokumentu do pobrania
+        //buyer
+        public static string _nipBuyer; //nip nabywcy 
+        public static string _nameBuyer; //nazwa nabywcy
+        public static int _idBuyer; //id nabywcy
+
+        //Contraktor
+        public static string _nipContractor; //nip sprzedawcy
+        public static int _idContractor;//id firmy z dokumentu do pobrania
         public static string _nameContractor; //nazwa firmy z dokumentu
-        public static int _statusDoc = 1; //0 domyślny 1 wyeksportowany
-        public static int _stateDoc = 2;//Stan: 2 - zweryfikowane, 3 - do weryfikacji
+
+        public static int _statusDoc = 0; //status - status atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
+        public static int _stateDoc = 0;//Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
 
         //miesiąc księgowy(obsługiwany format "yyyyy-MM", np. "2016-11")
         //static DateTime date = new DateTime(2019, 06, 01);
@@ -34,36 +46,72 @@ namespace TEST_Skanuj_to
             Program program = new Program();
 
             _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;// pobiera token.
-            program.getUserCompany();//Pobranie danych firmy
-            program.getCompanyId();// zwraca _idCompany //id user(kr group) 7085933
-                                   // program.uploadDocument(_idCompany, _fileName, _path, _multi); //OK wgranie dokumentu.
 
-            //program.GetAllDocumentList();
+            program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
+            Console.WriteLine("_idUser -> " + _idUser.ToString());
+            Console.WriteLine(" _nameUserCompany -> " + _nameUserCompany);
+            Console.WriteLine(" _NipMyCompany -> " + _nipUserCompany);
+            Console.WriteLine(" ");
 
+            //Wgranie dokumentu
+            //program.uploadDocument(_idUser, _fileName, _path, _multi); //OK wgranie dokumentu. 8354510
+            //Console.WriteLine("_idDocument -> " + _idDocument.ToString());
+            //Console.WriteLine("nazwa wgranego dokumentu ->" + _documentName);
+            //Console.WriteLine("data wgrania dokumentu -> " + _uploadDate);
+            //Console.WriteLine("info czy ponownie wgrane ->" + _notice);
+            //if (_notice == "file_already_exists")
+            //{
+            //    program.WriteToFile("Plik o nazwie " + _documentName + " już został wgrany. Id dokumentu " + _idDocument);
+            //}
+            //else
+            //{
+            //    program.WriteToFile("Poprawnie dodano plik o nazwie " + _documentName + " " + _uploadDate + ". Id dokumentu " + _idDocument);
+            //    int id_NewDoc = _idDocument;//id nowowgranego documentu 
+            //    //TODO zapis plików do sledzenia do tabeli?
+            //}
+            Console.WriteLine(" ");
+
+            //////////////program.addCompanies();//dodaje do firmy kontrahentów
+
+            program.GetDocumentById(8185903); //ok
+            Console.WriteLine("GetDocumentById(" + _idDocument + ")");
+
+            Console.WriteLine(" ");
+
+
+
+
+            //program.GetAllDocumentList();//OK
+            //Console.WriteLine(" ");
             //program.GetExportedDocumentList(_statusDoc);// dokumenty wyeksportowane
-
+            //Console.WriteLine(" ");
             //program.GetVeryfikatedDocumentList(_stateDoc); // dokumenty gotowe do pobrania
+            //Console.WriteLine(" ");
 
-            program.GetLastIdDocumentFromList(); //OK pobiera dane z ostatniego wgranego dokumentu
-            Console.WriteLine("id ostatniego wgranego dokumentu " + _idDocument);
 
-           // Console.WriteLine("wejście dla _idCompany " + _idCompany.ToString()); //company_id 7085933 data.id-> 8185904
-           // program.GetIdDocumentList(_idCompany);
+            //program.GetLastIdDocumentFromList(); //OK pobiera dane z ostatniego wgranego dokumentu z listy
+            //Console.WriteLine("nazwa sprzedawcy -> " + _nameContractor + " id " + _idContractor + " NIP " + _nipContractor);
+            //Console.WriteLine("nazwa nabywcy -> " + _nameBuyer + " id " + _idBuyer + " NIP " + _nipBuyer);
+            //Console.WriteLine("id ostatniego wgranego dokumentu " + _idDocument);
+            //Console.WriteLine(" ");
 
-            //program.getDocumentId(_idCompany, _fileName, _path, _multi);
+
+            //Console.WriteLine("wejście dla _idUser " + _idUser.ToString()); //company_id 7085933 data.id-> 8185904
+            //program.GetIdDocumentList(_idUser);
+            //Console.WriteLine(" ");
+
+            //program.getDocumentId(_idUser, _fileName, _path, _multi);
             //Console.WriteLine("getDocumentId()" + _idDocument.ToString());//id dokumentu
+            //Console.WriteLine(" ");
 
 
 
-            //program.GetDocumentById(_idDocument); //
-            //Console.WriteLine("GetDocumentById(" + _idDocument + ")");
+            //TODO program.DeleteDocument(_idDocument, _idUser);
+            Console.WriteLine(" ");
 
-            //TODO           program.DeleteDocument(_idDocument, _idCompany);
-            //Console.WriteLine("GetIdListByCmpID(_idCompany, _month)");
-            //program.GetIdListByCmpID(_idCompany, _month); //pobiera listę dokumentów po _idCompany z danego miesiąca rozliczeniowego.
 
-            //Console.WriteLine("GetCompanyLists(_idCompany)");
-            //program.GetCompanyLists(_idCompany);
+
+
         }//Main
 
 
@@ -109,26 +157,6 @@ namespace TEST_Skanuj_to
             //var request = new RestRequest(Method.POST);
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "get-user-company", ParameterType.GetOrPost);
-
-            IRestResponse restResponse = client.Execute(request);
-            var content = restResponse.Content;
-
-            Console.WriteLine("getUserCompany _tokenS -> " + content);// odpowiedz
-
-            return Execute<SkApiResponse>(request);
-        }//getUserCompany()
-
-        /// <summary>
-        /// Podiera _idCompany
-        /// </summary>
-        /// <returns>_idCompany</returns>
-        public SkApiResponse getCompanyId()
-        {
-            var client = new RestClient("http://app.skanuj.to/api");
-            var request = new RestRequest("user", RestSharp.Method.POST);
-            //var request = new RestRequest(Method.POST);
-            request.AddHeader("token", _tokenS.ToString());
-            request.AddParameter("mode", "get-user-company", ParameterType.GetOrPost);
             /*[{"id":7085933,
              * "name":"KR GROUP SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104 SP\u00d3\u0141KA KOMANDYTOWA",
              * "nip":"1132602742",
@@ -140,12 +168,15 @@ namespace TEST_Skanuj_to
 
             JArray jArray = JArray.Parse(JsonArrayString);
             dynamic data = JObject.Parse(jArray[0].ToString());
-            Console.WriteLine("_idCompany -> " + data.id);
-            _idCompany = data.id;
-            request.AddQueryParameter("getCompanyId() id ->", _idCompany.ToString());
+
+            _idUser = data.id;
+            _nipUserCompany = data.nip;
+            _nameUserCompany = data.name;
+
+            Console.WriteLine("getUserCompany -> " + content);// odpowiedz
 
             return Execute<SkApiResponse>(request);
-        }// getCompanyId()
+        }//getUserCompany()
 
 
         /// <summary>
@@ -163,11 +194,13 @@ namespace TEST_Skanuj_to
             var request = new RestRequest(Method.POST);
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("id", _idCompany.ToString());
+            request.AddHeader("id", _idUser.ToString());
+
             request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
             request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
             request.AddParameter("multipages", multi, ParameterType.GetOrPost);
             request.AddParameter("source", "integracja", ParameterType.GetOrPost);
+            request.AddParameter("response_type", "FULL", ParameterType.GetOrPost);
             request.AddFile(file_name, path);
 
             IRestResponse restResponse = client.Execute(request);
@@ -177,11 +210,9 @@ namespace TEST_Skanuj_to
 
             dynamic data = JObject.Parse(JsonArrayString);
             _idDocument = (data["good-uploads"][0]["doc_id"]);
-            //Console.WriteLine("_idDocument -> " + data["good-uploads"][0]["doc_id"]); //[JSON].good-uploads.[0].doc_id
-            Console.WriteLine("uploadDocument - _idDocument -> " + (_idDocument).ToString());
-
-            //request.AddQueryParameter("doc_id" + _idDocument.ToString());
-
+            _documentName = (data["good-uploads"][0]["name"]);
+            _uploadDate = (data["good-uploads"][0]["uploaded_date"]);
+            _notice = (data["page_info"]["notice"]); //poprawność wgrania
             return Execute<SkApiResponse>(request);
 
         }//SkApiResponse
@@ -255,7 +286,7 @@ namespace TEST_Skanuj_to
             var request = new RestRequest(Method.DELETE);
             request.Resource = "document?id=NN";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idCompany.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
             request.AddParameter("mode", "change-status", ParameterType.GetOrPost);
             //request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
@@ -296,7 +327,7 @@ namespace TEST_Skanuj_to
             var request = new RestRequest(Method.POST);
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("id", _idCompany.ToString());
+            request.AddHeader("id", _idUser.ToString());
             request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
             request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
             request.AddParameter("multipages", multi, ParameterType.GetOrPost);
@@ -322,7 +353,7 @@ namespace TEST_Skanuj_to
             return Execute<SkApiResponse>(request);
         }//getDocumentId(int company_id, string file_name, string path, bool multi)
 
-        
+
 
 
         //"doc_id":8340588
@@ -341,7 +372,7 @@ namespace TEST_Skanuj_to
             var request = new RestRequest(Method.POST);
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("id", _idCompany.ToString());
+            request.AddHeader("id", _idUser.ToString());
             request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
             request.AddParameter("source", "integracja", ParameterType.GetOrPost);
             request.AddFile(file_name, path);
@@ -496,10 +527,10 @@ namespace TEST_Skanuj_to
             }
             if (!string.IsNullOrEmpty("id"))
             {
-                request.AddParameter("id", _idCompany, ParameterType.HttpHeader); //w każdym zapytaniu
+                request.AddParameter("id", _idUser, ParameterType.HttpHeader); //w każdym zapytaniu
             }
             if (!string.IsNullOrEmpty("id"))
-                { request.AddParameter("id", _idDocument, ParameterType.HttpHeader); }
+            { request.AddParameter("id", _idDocument, ParameterType.HttpHeader); }
             var response = client.Execute<T>(request);
             if (response.ErrorException != null)
             {
@@ -537,8 +568,8 @@ namespace TEST_Skanuj_to
 
         //}
 
-       
-       
+
+
         //OK pobranie listy dokumentów w obrębie 1 firmy.
         public List<DocumentList> GetDocumentsListByCmpID(int company_id)
         {
@@ -547,9 +578,9 @@ namespace TEST_Skanuj_to
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-           
-            request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
-            request.AddParameter("count", 350, ParameterType.GetOrPost);
+
+            request.AddParameter("company_id", _idUser, ParameterType.HttpHeader);
+            request.AddParameter("count", 3, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
@@ -667,10 +698,10 @@ namespace TEST_Skanuj_to
             var request = new RestRequest();
             request.Resource = "document/mode/all";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idCompany.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
-            //request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
-            request.AddParameter("count", 3, ParameterType.GetOrPost);
+            //request.AddParameter("company_id", _idUser, ParameterType.HttpHeader);
+            request.AddParameter("count", 50, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
@@ -680,11 +711,16 @@ namespace TEST_Skanuj_to
             //Console.WriteLine("data.id -> " + data.id);
             //_idDocument = data.id;
             request.AddQueryParameter("id", _idDocument.ToString());
-           
+
             Console.WriteLine("GetAllDocumentList() -> " + content);// odpowiedz
 
             return Execute<List<DocumentList>>(request);
         }//GetDocumentList
+
+
+
+
+
 
         /// <summary>
         /// Zwraca dane ostatniego wgranego dokumentu.
@@ -696,9 +732,9 @@ namespace TEST_Skanuj_to
             var request = new RestRequest();
             request.Resource = "document/mode/all";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idCompany.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
-           // request.AddParameter("count", 3, ParameterType.GetOrPost);
+            // request.AddParameter("count", 50, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
@@ -706,32 +742,43 @@ namespace TEST_Skanuj_to
             JArray jArray = JArray.Parse(JsonArrayString);
             dynamic data = JObject.Parse(jArray[0].ToString()); // 
             int dlugosc = data.all_count;
-            dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString()); 
+            dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString());
 
             Console.WriteLine("kontraktor.id " + data1.contractor.id + "data.id -> " + data1.id); //pierwszy z listy
             _idDocument = data1.id; //id dokumentu
-            _idContraktor = data1.contractor.id;
-            _idCompany = data1.company_id;
+
+            //sprzedawca
+            _idContractor = data1.contractor.id;
             _nameContractor = data1.contractor.name;
-            Console.WriteLine("nazwa kontraktor-> " + data1.contractor.name);
-            Console.WriteLine("data-> " + data1.contractor.name);
-            Console.WriteLine("uploaded_date" + data1.uploaded_date);
+            _nipContractor = data1.attributes.SprzedawcaNip; //"PL5242667621",
+
+            //nabywca
+            _idBuyer = data1.company.id;
+            _nameBuyer = data1.company.name;
+            _nipBuyer = data1.company.nip;//"1132602742"
+
+            /*kontraktor.id 9969824data.id -> 8185910
+nazwa sprzedawcy-> "LINDSTROM" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ 9969824 NIP PL5222640524
+nazwa nabywcy-> KR GROUP SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ SPÓŁKA KOMANDYTOWA 7085933 NIP 1132602742
+uploaded_date2019-07-01 11:44:30.868114
+id ostatniego wgranego dokumentu 8185910*/
 
             request.AddQueryParameter("status", _statusDoc.ToString());
+
             //Console.WriteLine("GetIdDocumentList -> " + content);// odpowiedz
             return Execute<List<DocumentList>>(request);
         }//GetExportedDocumentList
 
         //{"id":8185917,"user_id":7082762,
 
-        // OK Pobiera pojedyńcze dane
-        public List<DocumentList> GetIdDocumentList(int id) 
+        // OK lista dokumentów danego usera.
+        public List<DocumentList> GetIdDocumentList(int id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
             request.Resource = "document/mode/all";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idCompany.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
             request.AddParameter("id", id, ParameterType.HttpHeader);
             //request.AddParameter("count", 3, ParameterType.GetOrPost);
@@ -743,21 +790,21 @@ namespace TEST_Skanuj_to
             dynamic data = JObject.Parse(jArray[0].ToString()); // 
             int dlugosc = data.all_count;
             //company_id 7085933 data.id -> 8185904
-            Console.WriteLine("kontraktor.id " + data.contractor.id  + "data.id -> " + data.id); //pierwszy z listy
+            Console.WriteLine("kontraktor.id " + data.contractor.id + "data.id -> " + data.id); //pierwszy z listy
             _idDocument = data.id;
-            _idContraktor = data.contractor.id;
-            _idCompany = data.company_id;
+            _idContractor = data.contractor.id;
+            _idUser = data.company_id;
             _nameContractor = data.contractor.name;
             Console.WriteLine("nazwa kontraktor-> " + data.contractor.name);
             Console.WriteLine("data-> " + data.contractor.name);
             Console.WriteLine("uploaded_date" + data.uploaded_date);
-       
-            dynamic data1 = JObject.Parse(jArray[dlugosc-1].ToString()); // 
+
+            dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString()); // 
 
             Console.WriteLine("kontraktor.id " + data1.contractor.id + "data.id -> " + data1.id); //pierwszy z listy
             _idDocument = data1.id;
-            _idContraktor = data1.contractor.id;
-            _idCompany = data1.company_id;
+            _idContractor = data1.contractor.id;
+            _idUser = data1.company_id;
             _nameContractor = data1.contractor.name;
             Console.WriteLine("nazwa kontraktor-> " + data1.contractor.name);
             Console.WriteLine("data-> " + data1.contractor.name);
@@ -787,8 +834,8 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             var request = new RestRequest();
             request.Resource = "document/mode/search";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idCompany.ToString());
-            
+            request.AddHeader("company_id", _idUser.ToString());
+
 
             request.AddParameter("status", _statusDoc, ParameterType.HttpHeader);
             request.AddParameter("count", 3, ParameterType.GetOrPost);
@@ -815,12 +862,12 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
-            request.Resource = "document/mode/search";
+            request.Resource = "document/mode/all";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idCompany.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
             request.AddParameter("state", _stateDoc, ParameterType.HttpHeader);
-            request.AddParameter("count", 3, ParameterType.GetOrPost);
+            request.AddParameter("count", 10, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
@@ -846,8 +893,8 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-            
-            request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
+
+            request.AddParameter("company_id", _idUser, ParameterType.HttpHeader);
             request.AddParameter("count", 3, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
@@ -869,7 +916,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
 
 
 
-       
+
         public List<DocumentList> GetIdList(int company_id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -877,7 +924,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
             request.AddParameter("mode", "all-documents-list", ParameterType.GetOrPost);
-                        request.AddParameter("company_id", _idCompany, ParameterType.HttpHeader);
+            request.AddParameter("company_id", _idUser, ParameterType.HttpHeader);
             request.AddParameter("count", 3, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
@@ -908,6 +955,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest("user", RestSharp.Method.POST);
             request.AddHeader("token", _tokenS.ToString());
+
             request.AddParameter("mode", "add-companies", ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
@@ -955,18 +1003,95 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
 
 
 
-        // // // // // // Funkcja pobierająca dane pojedynczego dokumentu - odpowiedz JSON
+        // // // // // // Funkcja pobierająca dane pojedynczego dokumentu - rozszerzane dane.
+
+        public DocumentOneXt GetDocumentByContractorNip(string nipContractor)
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
+
+
+            request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
+            request.AddParameter("contractor.nip", nipContractor, ParameterType.GetOrPost);
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+
+
+            Console.WriteLine("GetDocumentById ->" + content);// odpowiedz
+
+            return Execute<DocumentOneXt>(request);
+        }// GetDocumentById(int id)
+
+
         public DocumentOneXt GetDocumentById(int id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
             request.Resource = "document";
             request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("doc_id", _idDocument.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
+
+
             request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
             request.AddParameter("id", id, ParameterType.GetOrPost);
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
+            var JsonArrayString = content;
+
+            dynamic data = JObject.Parse(JsonArrayString);
+
+            //dane z poszerzonych danych 1 dokumentu
+
+            //dane sprzedawcy
+            _idContractor = (data["contractor"]["id"]);
+            _nameContractor = (data["contractor"]["name"]);
+            _nipContractor = (data["contractor"]["nip"]);
+            string adressContractor = data["contractor"]["address"];
+
+            Console.WriteLine("_idContractor ->" + _idContractor + " nazwa: " + _nameContractor + " NIP sprzedawcy: " + _nipContractor + " adres " + adressContractor);
+
+            //dane kupującego
+
+            //status - status atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
+            int status = (data["status"]);
+            if (status == 0) { Console.WriteLine("Dokument nie wymagający weryfikacji (0)"); }
+            else if (status == 1) { Console.WriteLine("Dokument wymaga weryfikacji (1)"); }
+            else { Console.WriteLine("Dokument zweryfikowany (2)"); }
+
+
+            //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+            int state = (data["state"]);
+            if (state == 0) { Console.WriteLine("Dokument został dodany (0)"); }
+            else if (state == 1) { Console.WriteLine("Dokument w przetworzeniu (1)"); }
+            else if (state == 2) { Console.WriteLine("Dokument zweryfikowany (2)"); }
+            else if (state == 3) { Console.WriteLine("Dokument do weryfikacji (3)"); }
+            
+            else { Console.WriteLine("Dokument wielostronicowy brak akcji (4)"); }
+
+            _idBuyer = (data["company"]["id"]);
+            _nipBuyer = (data["company"]["nip"]);
+            _nameBuyer = (data["company"]["name"]);
+            string adressBuyer = (data["company"]["address"]);
+
+            Console.WriteLine("idBuyer -> " + _idBuyer + " nazwa " + _nameBuyer + " nip " + _nipBuyer + " adres " + adressBuyer);
+
+            //dane faktury
+            foreach (var val in data["positions"])
+            {
+                string nameProduct = val["Nazwa"];
+                int Ilosc = val["Ilosc"];
+                int Validation = val["is_valid"];
+
+                Console.WriteLine("Nazwa " + nameProduct + ", Ilosc " + Ilosc);
+                Console.WriteLine("Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                if (Validation == 1) { Console.WriteLine("Poprawnie rozpoznane (" + Validation+ ")."); }
+                else { Console.WriteLine("Problem z rozpoznaniem warości (" + Validation + ")."); }
+            }
+
+
             Console.WriteLine("GetDocumentById ->" + content);// odpowiedz
 
             return Execute<DocumentOneXt>(request);
@@ -1044,7 +1169,9 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
          * "PrzyczynaKorekty":{"attribute_id":219,"value":"","is_valid":0,"status":1,"left":-1,"top":-1,"right":-1,"bottom":-1,"page":0,"aspect_ratio":1,"user_id":null}},
          * 
          * "positions":[{"is_valid":"1","status":0,"VAT":17.22,"Code":"MBW2","Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"",
-         * "Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"TYP TRANSAKCJI: WYNAJEM MBW2-MATA NIEBIESKA 115X200","Ilosc":1,"Jednostka":"","Cena":74.88,"Netto":74.88,"StawkaVAT":23,"Brutto":92.1,"IdProduct":""},
+         * "Category2Desc":"","e
+         * 
+         *_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"TYP TRANSAKCJI: WYNAJEM MBW2-MATA NIEBIESKA 115X200","Ilosc":1,"Jednostka":"","Cena":74.88,"Netto":74.88,"StawkaVAT":23,"Brutto":92.1,"IdProduct":""},
          * 
          * {"VAT":28.7,"Code":"MBW4","is_valid":"1","status":0,"Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"","Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"MBW4-MATA NIEBIESKA 150X300","Ilosc":1,"Jednostka":"","Cena":124.8,"Netto":124.8,"StawkaVAT":23,"Brutto":153.5,"IdProduct":""},{"is_valid":"1","status":0,"VAT":0.01,"Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"","Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"CENT_DIFFERENCE_1","Ilosc":1,"Jednostka":"","Cena":0,"Netto":0,"StawkaVAT":23,"Brutto":0.01,"IdProduct":""}],
          * 
