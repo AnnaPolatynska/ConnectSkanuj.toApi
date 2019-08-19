@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Xml.Linq;
 using File = System.IO.File;
 
 namespace TEST_Skanuj_to
@@ -12,10 +13,9 @@ namespace TEST_Skanuj_to
 
     //connection stringi z appconfig
     //KRG411\SQLEXPRESS
-    //<add name="ConnectionSQL" connectionString="Data source=KRG411\SQLEXPRESS;database='skanujTo';User id=KRG\polann;Password=Tykwa13!" providerName="System.Data.SqlClient" />
-    //<add name="ConnectionSQL" connectionString="Data source=10.0.1.155;database='skanujTo';User id=SkanujTo;Password=Sk@nu7T0" providerName="System.Data.SqlClient" />
-    //<add name="ConnectionSQL" connectionString="Data source=10.0.1.155;database='skanujTo';User id=KRG\polann;Password=Tykwa13!" providerName="System.Data.SqlClient" />
     //<add name="ConnectionSQL" connectionString="Data source=10.0.1.155;database='vat';User id=vat;Password=95f)ek4n9!" providerName="System.Data.SqlClient" />
+    //<add name = "ConnectionSQL" connectionString="Data source=KRG411\SQLEXPRESS;database='skanujTo';User id=skanuj;Password=alamakota" providerName="System.Data.SqlClient" />
+
     class Program
     {
 
@@ -52,13 +52,9 @@ namespace TEST_Skanuj_to
 
         public static int _statusDoc = 0; //statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
 
-        public static int _stateDoc = 3;//Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+        public static int _stateDoc;//Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+        public static int _stateForProcess; // status dokumentu w bazie
 
-        //miesiąc księgowy(obsługiwany format "yyyyy-MM", np. "2016-11")
-        //static DateTime date = new DateTime(2019, 06, 01);
-        //public static string _month = date.ToString("yyyy-MM", DateTimeFormatInfo.InvariantInfo);
-
-        //public static string _month1 = DateTime.Now.ToString("yyyy-MM", DateTimeFormatInfo.InvariantInfo); //obecna data
 
         public static void Main(string[] args)
         {
@@ -74,67 +70,111 @@ namespace TEST_Skanuj_to
             try
             {
                 program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
-                Console.WriteLine("C _idUser -> " + _idUser.ToString());
-                Console.WriteLine("C _nameUserCompany -> " + _nameUserCompany);
-                Console.WriteLine("C _NipMyCompany -> " + _nipUserCompany);
+                //Console.WriteLine("C _idUser -> " + _idUser.ToString());
+                //Console.WriteLine("C _nameUserCompany -> " + _nameUserCompany);
+                //Console.WriteLine("C _NipMyCompany -> " + _nipUserCompany);
                 Console.WriteLine(" ");
             }
             catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
             Console.WriteLine(" ");
 
-            ////Działanie programu od wgrania dokumentu.
-            try
-            {
-                program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu 8354510
+            //Działanie programu od wgrania dokumentu.
+            //try
+            //{
+            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu 8354510
 
-                ZapiszDoBazy();//zapisuje do bazy dane nowego dokumentu do śledzenia.
+            //    //Console.WriteLine("C _idDocument -> " + _idDocument.ToString());
+            //    //Console.WriteLine("C nazwa wgranego dokumentu ->" + _documentName);
+            //    //Console.WriteLine("C info czy ponownie wgrane ->" + _notice);
+            //    _newIdDocument = _idDocument;//id nowo wgranego documentu 
 
-                Console.WriteLine("C _idDocument -> " + _idDocument.ToString());
-                Console.WriteLine("C nazwa wgranego dokumentu ->" + _documentName);
-                //Console.WriteLine("data wgrania dokumentu -> " + _uploadDate);
-                Console.WriteLine("C info czy ponownie wgrane ->" + _notice);
-                _newIdDocument = _idDocument;
+            //    //ZapiszDoBazy();//TODO zapisuje do bazy dane nowego dokumentu do śledzenia.
 
-                if (_notice == "file_already_exists")
-                {
-                    Console.WriteLine("Nie da się wgrać pliku o Id " + _idDocument + ". Plik " + _documentName + " został już wcześniej wgrany.");
-                    //program.WriteToFile("Nie da się wgrać pliku. Plik " + _documentName + " - Id dokumentu " + _idDocument + " został już wcześniej wgrany.");
-                    SprawdzStatus(8401183);
-                }
-                else
-                {
-                    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-                    //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-                    _newIdDocument = _idDocument;//id nowo wgranego documentu 
+            //    if (_notice == "file_already_exists") //jeżeli plik istneje
+            //    {
+            //        Console.WriteLine("Nie da się wgrać pliku o Id " + _idDocument + ". Plik " + _documentName + " został już wcześniej wgrany.");
+            //        //program.WriteToFile("Nie da się wgrać pliku. Plik " + _documentName + " - Id dokumentu " + _idDocument + " został już wcześniej wgrany.");
+            //        //TODO sprawdz id doc po nazwie dokumentu
 
-                    //TODO zapis plików do sledzenia do tabeli?
-                    // program.GetExportStatusByIdDoc(badanyDoc); // Sprawdza status dokumentu
+            //        //OK Odczyt statusu Dokumentu z DB 8401183 ma status 0 dodany
+            //        SprawdzStatusInDB(8401183);
 
-                    // sprawdza czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
-                    //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-                    program.GetVeryficationStateByIdDoc(_newIdDocument);
 
-                }
-            }
-            catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
+            //        //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
+
+            //        //TODO zapis plików do sledzenia do tabeli?
+
+
+            //        // sprawdza czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
+            //        //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+            //        program.GetVeryficationStateByIdDoc(_newIdDocument);
+
+            //    }
+            //}//try uploadDocument
+
+
+
+            //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
             Console.WriteLine(" ");
-
-
-
-            SprawdzStatus(8401183); 
-
-
-
-            //program.GetDataFromDoc(_documentName);
 
 
             //OK sprawdz czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
             //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            int badanyDoc = 8397401;
+            int badanyDoc = 8401183;
+
+            program.WriteXMLToFile(badanyDoc);
+
+
+
             Console.WriteLine("Badany doc -> " + badanyDoc);
-            program.GetVeryficationStateByIdDoc(badanyDoc);
+            program.GetVeryficationStateByIdDoc(badanyDoc); // _stateDoc dokumentu o podanym id
             Console.WriteLine(" ");
-            program.GetDataFromDoc(badanyDoc);
+
+            ZapiszDoBazy();//zapisuje do bazy dane nowego dokumentu do śledzenia.
+
+            program.WriteToFile(":-)");
+
+
+
+            program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
+
+            //TODO AktualizujStateInDB()
+            AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+
+
+            SprawdzStatusInDB(8401183); //OK sprawdza w Bazie status dokumentu o podanym id
+            Console.WriteLine(" SprawdzStatusInDB - stateForProcess => " + _stateForProcess);
+            Console.WriteLine(" ");
+
+
+            _documentName = "PROFORMA.PNG";
+
+
+
+            int idDocTEST = badanyDoc;//8401183;
+            int stateFPTEST = _statusDoc;//1;
+            int validTEST = 0;
+            if (_stateDoc.ToString() == _stateForProcess.ToString())
+            {
+                Console.WriteLine("Procesy są takie same. Status w bazie " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
+            }
+            else
+            {
+                Console.WriteLine("Procesy się różnią " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
+                AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
+            }
+            Console.WriteLine(" ");
+
+            // AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
+
+            //program.GetDataFromDoc(_documentName);
+
+
+
 
             //_documentName = "3TEST.JPG";
             //program.GetIdDocByName( _documentName);
@@ -372,18 +412,67 @@ namespace TEST_Skanuj_to
             return Execute<SkApiResponse>(request);
         }//SkApiResponse
 
-
-        public static void ZapiszDoBazy()
+        public static void AktualizujStateInDB()
         {
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
-            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc WHERE state = 3;", sqlConnection);
+            //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc WHERE validated = 5;", sqlConnection);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
             sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlInsert = ("INSERT INTO dbo.WgraneDoc(doc_id, name, state, uploaded_date, user_id, validated) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @validated);");
+            // szukaj 1
+            bool _validated;
+            int state;
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                state = int.Parse(dataRow[@"state"].ToString());
+                if (state == 5)
+                {
+                    _idDocument = int.Parse(dataRow[@"doc_id"].ToString());
+                    state = 4;
+                    var sqlUpdate = ("UPDATE dbo.WgraneDoc SET state = @state WHERE doc_id=@doc_id;");
+
+                    using (SqlConnection sqlConnection1 = new SqlConnection(connString))
+                    {
+                        using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
+                        {
+                            sqlConnection1.Open();
+                            command.Parameters.AddWithValue("@doc_id", value: _2DB_doc_id);
+                            //command.Parameters.AddWithValue("@name", value: _2DB_name);
+                            command.Parameters.AddWithValue("@state", value: _2DB_state);
+                            //command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
+                            //command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
+                            //command.Parameters.AddWithValue("@validated", value: _2DB_validated);
+
+                            int rows = command.ExecuteNonQuery();
+                            Console.WriteLine("AktualizujStateInDB -_____________> Dla dokumentu w DB " + _idDocument + " Zmianiono state na " + state);
+
+                        }//using
+                    }//using
+
+                }
+
+            }
+
+
+
+
+        }//AktualizujStateInDB()
+
+        public static void ZapiszDoBazy()
+        {
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc;", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, validated) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @validated);");
 
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
@@ -401,8 +490,12 @@ namespace TEST_Skanuj_to
             }//using
 
         }//ZapiszDoBazy()
-       
-        public static void SprawdzStatus(int idDOC)
+
+        /// <summary>
+        /// Sprawdza status dokumentu w bazie danych
+        /// </summary>
+        /// <param name="idDOC">id dokumentu</param>
+        public static void SprawdzStatusInDB(int idDOC)
         {
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
@@ -413,11 +506,11 @@ namespace TEST_Skanuj_to
             sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            int stateForProcess;
-            
+
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                stateForProcess = int.Parse((dataRow[@"state"].ToString()));
+                int stateForProcess = int.Parse((dataRow[@"state"].ToString()));
+                _stateForProcess = stateForProcess;
                 if (stateForProcess == 0)
                 {
                     idDOC = int.Parse(dataRow["doc_id"].ToString());
@@ -451,8 +544,38 @@ namespace TEST_Skanuj_to
             }// foreach
 
             sqlConnection.Close();
-        }//SprawdzStatus()
+        }//SprawdzStatusInDB()
 
+
+        public static void AktualizujStatusDoc(int idDoc, int stateFP, int valid)
+        {
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc;", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var sqlUpdate = "UPDATE dbo.WgraneDoc SET validated = @validated, state = @state WHERE doc_id = @doc_id;";
+                using (SqlConnection sqlConnection1 = new SqlConnection(connString))
+                {
+                    using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
+                    {
+                        sqlConnection1.Open();
+                        command.Parameters.AddWithValue("@doc_id", idDoc);
+                        command.Parameters.AddWithValue("@state", stateFP);
+                        command.Parameters.AddWithValue("@validated", valid);
+                        int rows = command.ExecuteNonQuery();
+                        idDoc = int.Parse(dataRow["doc_id"].ToString());
+                    }
+                }
+            }
+            sqlConnection.Close();
+
+        }//AktualizujStatusDoc
 
 
         // zapis do pliku ???
@@ -561,47 +684,6 @@ namespace TEST_Skanuj_to
             return Execute<SkApiResponse>(request);
 
         }//SkApiResponse
-
-
-
-
-
-        /// <summary>
-        /// Zwraca Id wgranego dokumentu. ok pobiera dane z tabeli wgranych dokumentów
-        ///
-        //public SkApiResponse getDocumentId(int company_id, int document_id)
-        //{
-        //    var client = new RestClient("http://app.skanuj.to/api");
-
-        //    var request = new RestRequest(Method.POST);
-        //    request.Resource = "document";
-        //    request.AddHeader("token", _tokenS.ToString());
-        //    request.AddHeader("id", _idUser.ToString());
-        //    request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
-        //    request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
-        //    request.AddParameter("")
-        //    request.AddParameter("source", "integracja", ParameterType.GetOrPost);
-
-
-        //    IRestResponse restResponse = client.Execute(request);
-        //    var content = restResponse.Content;
-        //    var JsonArrayString = content;
-
-        //    dynamic data = JObject.Parse(JsonArrayString);
-
-        //    _idDocument = (data["good-uploads"][0]["doc_id"]);
-        //    Console.WriteLine("_idDocument -> " + data["good-uploads"][0]["doc_id"]); //[JSON].good-uploads.[0].doc_id
-
-        //    Console.WriteLine("getDocumentId - _idDocument -> " + _idDocument);
-
-        //    foreach (var prop in data["good-uploads"])
-        //        Console.WriteLine("_idDocument w pętli-> " + prop["doc_id"]);
-
-        //    request.AddQueryParameter("doc_id", _idDocument.ToString());
-        //    Console.WriteLine("getDocumentId - > " + content);
-        //    return Execute<SkApiResponse>(request);
-        // }//getDocumentId(int company_id, string file_name, string path, bool multi)
-
 
 
 
@@ -1240,10 +1322,10 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
         }// GetDocumentById(int id)
 
         /// <summary>
-        /// Odszukuje id dokumentu wgranego wcześniej po nazwie dokumentu.
+        /// OK Odszukuje id dokumentu wgranego wcześniej po nazwie dokumentu.
         /// </summary>
         /// <param name="name"></param>
-        /// <returns></returns>
+        /// <returns>dane dokumentu z okresleniem poprawności rozpoznania poszczególnych pozycji.</returns>
         public DocumentOneXt GetDataFromDoc(int id) // // // // ok
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -1260,7 +1342,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             var JsonArrayString = content;
             dynamic data = JObject.Parse(JsonArrayString);
             _documentName = (data["name"]);
-           //pobranie rozpoznanych wartości dokumentu. 
+            //pobranie rozpoznanych wartości dokumentu. 
             string status1 = " wymaga zweryfikowania. Rozpoznanie na poziomie - (";
             string status1a = "). Do weryfikacji wartość: ";
             string puste = "Pole jest puste. Nie wykryto wartości w polu ";
@@ -1888,9 +1970,211 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             }
             catch { };
 
-            Console.WriteLine("GetDataFromDoc " + request);
+            // Console.WriteLine("GetDataFromDoc " + content);
             return Execute<DocumentOneXt>(request);
+        }//GetDataFromDoc(int id)
+
+        public void CreateXML(string filename)
+        {
+            XDocument xml = new XDocument(
+                new XDeclaration("1.0", "utf-8", "yes"),
+                new XElement("Dokument", new XAttribute("version", "2.0"),
+                new XElement("Dane", new XElement("Test", "1.0"),
+                new XElement("Atrybuty",
+                     new XElement("BruttoWalutaPodstawowa", 250),
+                     new XElement("CategoryDesc", "CategoryDesc"),
+                     new XElement("CzyNieKompletnaPozycja", "CzyNieKompletnaPozycja"),
+                     new XElement("DataSprzedazy", "DataSprzedazy"),
+                     new XElement("DataWplywu", "DataWplywu"),
+                     new XElement("DataWystawienia", "DataWystawienia"),
+                     new XElement("FakturaKorygowana", "FakturaKorygowana"),
+                     new XElement("Kategoria", "Kategoria"),
+                     new XElement("KategoriaId", "KategoriaId"),
+                     new XElement("KontoBankowe", "KontoBankowe")
+                ),
+                new XElement("Nabywca",
+                     new XElement("NabywcaAdres", "NabywcaAdres"),
+                     new XElement("NabywcaKod", "NabywcaKod"),
+                     new XElement("NabywcaMiejscowosc", "NabywcaMiejscowosc"),
+                     new XElement("NabywcaNazwa", "NabywcaNazwa"),
+                     new XElement("NabywcaNip", "NabywcaNip")
+                ))));
+            xml.Save("Test.xml");
+
+            //"BruttoWalutaPodstawowa"
+            //        "CategoryDesc"
+            //        "CzyNieKompletnaPozycja"
+            //        "DataSprzedazy"
+            //        "DataWplywu"
+            //        "DataWystawienia"
+            //        "FakturaKorygowana"
+            //        "Kategoria"
+            //        "KategoriaId"
+            //        "KontoBankowe"
+            //        "Korygujaca"
+            //        "KursWaluty"
+            //        "MiesiacKsiegowy"
+            //        "NabywcaAdres"
+            //        "NabywcaKod"
+            //        "NabywcaMiejscowosc"
+            //        "NabywcaNazwa"
+            //        "NabywcaNip"
+            //        "NettoWalutaPodstawowa"
+            //        "NrFaktury"
+            //        "NrZamowienia"
+            //        "PrzyczynaKorekty"
+            //        "RazemBrutto"
+            //        "RazemNetto"
+            //        "RazemVAT"
+            //        "SposobPlatnosci"
+            //        "SprzedawcaAdres"
+            //        "SprzedawcaKod": 
+            //        "SprzedawcaMiejscowosc":
+            //        "SprzedawcaNazwa":
+            //        "SprzedawcaNip": 
+            //        "TerminPlatnosci": 
+            //        "VatWalutaPodstawowa":
+            //        "Waluta": 
+            //        "Zaplacono": 
+
+
+
+        }//CreateXML(string filename)
+
+        class Atrybuty
+        {
+            public string BruttoWalutaPodstawowa { get; set; }
+            public string CategoryDesc { get; set; }
+            public string CzyNieKompletnaPozycja { get; set; }
+            public string DataSprzedazy { get; set; }
+            public string DataWplywu { get; set; }
+            public string DataWystawienia { get; set; }
+            public string FakturaKorygowana { get; set; }
+            public string Kategoria { get; set; }
+            public string KategoriaId { get; set; }
+            public string KontoBankowe { get; set; }
+            public string Korygujaca { get; set; }
+            public string KursWaluty { get; set; }
+            public string MiesiacKsiegowy { get; set; }
+
+            public Atrybuty(string bruttoWalutaPodstawowa, string categoryDesc, string czyNieKompletnaPozycja, string dataSprzedazy, string dataWplywu, string dataWystawienia, string fakturaKorygowana,
+                string kategoria, string kategoriaId, string kontoBankowe, string korygujaca, string kursWaluty, string miesiacKsiegowy)
+            {
+                BruttoWalutaPodstawowa = bruttoWalutaPodstawowa;
+                CategoryDesc = categoryDesc;
+                CzyNieKompletnaPozycja = czyNieKompletnaPozycja;
+                DataSprzedazy = dataSprzedazy;
+                DataWplywu = dataWplywu;
+                DataWystawienia = dataWystawienia;
+                FakturaKorygowana = fakturaKorygowana;
+                Kategoria = kategoria;
+                KategoriaId = kategoriaId;
+                KontoBankowe = kontoBankowe;
+                Korygujaca = korygujaca;
+                KursWaluty = kursWaluty;
+                MiesiacKsiegowy = miesiacKsiegowy;
+            }
+
         }
+        class Nabywca
+        {
+            public string NabywcaAdres { get; set; }
+            public string NabywcaKod { get; set; }
+            public string NabywcaMiejscowosc { get; set; }
+            public string NabywcaNazwa { get; set; }
+            public string NabywcaNip { get; set; }
+            public string NettoWalutaPodstawowa { get; set; }
+            public string NrFaktury { get; set; }
+            public string NrZamowienia { get; set; }
+            public string PrzyczynaKorekty { get; set; }
+            public string RazemBrutto { get; set; }
+            public string RazemNetto { get; set; }
+            public string RazemVAT { get; set; }
+            public string SposobPlatnosci { get; set; }
+            public string SprzedawcaAdres { get; set; }
+            public string SprzedawcaKod { get; set; }
+            public string SprzedawcaMiejscowosc { get; set; }
+            public string SprzedawcaNazwa { get; set; }
+            public string SprzedawcaNip { get; set; }
+            public string TerminPlatnosci { get; set; }
+            public string VatWalutaPodstawowa { get; set; }
+            public string Waluta { get; set; }
+            public string Zaplacono { get; set; }
+
+
+            //        ""
+            //        ""
+            //        "DataWystawienia"
+            //        ""
+            //        "Kategoria"
+            //        "KategoriaId"
+            //        ""
+            //        "Korygujaca"
+            //        ""
+            //        ""
+            //        "NabywcaAdres"
+            //        "NabywcaKod"
+            //        "NabywcaMiejscowosc"
+            //        "NabywcaNazwa"
+            //        "NabywcaNip"
+            //        "NettoWalutaPodstawowa"
+            //        "NrFaktury"
+            //        "NrZamowienia"
+            //        "PrzyczynaKorekty"
+            //        "RazemBrutto"
+            //        "RazemNetto"
+            //        "RazemVAT"
+            //        "SposobPlatnosci"
+            //        "SprzedawcaAdres"
+            //        "SprzedawcaKod": 
+            //        "SprzedawcaMiejscowosc":
+            //        "SprzedawcaNazwa":
+            //        "SprzedawcaNip": 
+            //        "TerminPlatnosci": 
+            //        "VatWalutaPodstawowa":
+            //        "Waluta": 
+            //        "Zaplacono": 
+
+        }
+
+
+        public void WriteXMLToFile(int idDoc)
+        {
+            string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
+            string filename = name + "_" + idDoc + ".xml";
+            string path = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
+            string filepath = path + "\\" + DateTime.Now.ToShortDateString().Replace('/', '_') + "_" + filename;
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            if (!File.Exists(filepath))
+            {
+                try
+                {
+                    CreateXML(filepath);
+                    WriteToFile("Wygenerowano " + filename + " " + DateTime.Now);
+                }
+                catch { WriteToFile("Problem z wygenerowaniem pliku" + filename); }
+            }
+            else
+            {
+                try
+                {
+                    CreateXML(filepath);
+                    WriteToFile("Zaktualizowano plik " + filename + " " + DateTime.Now);
+                }
+                catch
+                { WriteToFile("Problem z wygenerowaniem pliku" + filename); }
+            }
+
+        }// WriteXMLToFile
+
+
+
+
 
         /// <summary>
         /// Pokazuje poziom odczytu pozycji w dokumencie o podanym id.
@@ -1917,25 +2201,24 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
 
             ////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
             int state = (data["state"]);
-            if (state == 0) { Console.WriteLine("Dokument został dodany (0)"); }
+            if (state == 0) { Console.WriteLine("Dokument " + _documentName + " został dodany (0)"); }
             else if (state == 1)
             {
-                Console.WriteLine("Dokument w przetworzeniu (1)");
-
+                Console.WriteLine("Dokument " + _documentName + "  w przetworzeniu (1)");
             }
             else if (state == 2)
             {
-                Console.WriteLine("Dokument poprawnie zweryfikowany (2)");
+                Console.WriteLine("Dokument " + _documentName + "  poprawnie zweryfikowany (2)");
             }
             else if (state == 3)
             {
-                Console.WriteLine("Dokument do weryfikacji (3).");
+                Console.WriteLine("Dokument  " + _documentName + " do weryfikacji (3).");
                 //dane faktury
                 foreach (var val in data["positions"])
                 {
                     string nameProduct = val["Nazwa"];
                     int Ilosc = val["Ilosc"];
-                    int Validation = val["is_valid"];
+                    int Validation = val["is_valid"]; // pobiera validation 
                     string zero = "0";
                     string jeden = "1";
 
@@ -1946,13 +2229,13 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                     else if (Validation.ToString() == jeden)
                     {
                         Console.WriteLine("Poprawnie rozpoznane (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
-
                     }
                 }
             }
+            _stateDoc = state;
+            Console.WriteLine("_stateDoc => " + _stateDoc);
 
-
-
+            //Console.WriteLine(" GetVeryficationStateByIdDoc(int id) " + content);
             return Execute<DocumentOneXt>(request);
         }// GetDocumentById(int id)
 
