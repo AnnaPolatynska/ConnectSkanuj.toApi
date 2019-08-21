@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Xml.Linq;
 using File = System.IO.File;
 
@@ -18,7 +19,7 @@ namespace TEST_Skanuj_to
 
     class Program
     {
-
+        private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
         static string _fileName = System.Configuration.ConfigurationManager.AppSettings["fileName"].ToString();//"Test.pdf";//"Test.pdf";
         static string _path = System.Configuration.ConfigurationManager.AppSettings["path"].ToString() + _fileName; //C:\\Konektora "C:/Users/polann/Desktop/pliki_do_konectora/Test.pdf";
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
@@ -88,7 +89,7 @@ namespace TEST_Skanuj_to
             //    //Console.WriteLine("C info czy ponownie wgrane ->" + _notice);
             //    _newIdDocument = _idDocument;//id nowo wgranego documentu 
 
-            //    //ZapiszDoBazy();//TODO zapisuje do bazy dane nowego dokumentu do śledzenia.
+            //    //SaveToDB();//TODO zapisuje do bazy dane nowego dokumentu do śledzenia.
 
             //    if (_notice == "file_already_exists") //jeżeli plik istneje
             //    {
@@ -97,7 +98,7 @@ namespace TEST_Skanuj_to
             //        //TODO sprawdz id doc po nazwie dokumentu
 
             //        //OK Odczyt statusu Dokumentu z DB 8401183 ma status 0 dodany
-            //        SprawdzStatusInDB(8401183);
+            //        FindStatusInDB(8401183);
 
 
             //    }
@@ -124,49 +125,47 @@ namespace TEST_Skanuj_to
 
             //OK sprawdz czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
             //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            int badanyDoc = 8401183;
-
-            program.WriteXMLToFile(badanyDoc);
-
-
-
+            int badanyDoc = 8185903;
+            program.WriteInfoToFile(badanyDoc);
             Console.WriteLine("Badany doc -> " + badanyDoc);
-            program.GetVeryficationStateByIdDoc(badanyDoc); // _stateDoc dokumentu o podanym id
+
+            //program.GetVeryficationStateByIdDoc(badanyDoc); // _stateDoc dokumentu o podanym id
             Console.WriteLine(" ");
 
-            ZapiszDoBazy();//zapisuje do bazy dane nowego dokumentu do śledzenia.
-
-            program.WriteToFile(":-)");
-
+            SaveToDB();//zapisuje do bazy dane nowego dokumentu do śledzenia.
 
 
             program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
 
+            Console.WriteLine("utworzono xml");
+            program.CreateXML((program._endFileName).ToString()); //OK zapis danych do xml
+
+
             //TODO AktualizujStateInDB()
-            AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+            //AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
 
 
-            SprawdzStatusInDB(8401183); //OK sprawdza w Bazie status dokumentu o podanym id
-            Console.WriteLine(" SprawdzStatusInDB - stateForProcess => " + _stateForProcess);
+            // FindStatusInDB(8401183); //OK sprawdza w Bazie status dokumentu o podanym id
+            //Console.WriteLine(" FindStatusInDB - stateForProcess => " + _stateForProcess);
             Console.WriteLine(" ");
 
 
             _documentName = "PROFORMA.PNG";
 
 
-
-            int idDocTEST = badanyDoc;//8401183;
-            int stateFPTEST = _statusDoc;//1;
-            int validTEST = 0;
-            if (_stateDoc.ToString() == _stateForProcess.ToString())
-            {
-                Console.WriteLine("Procesy są takie same. Status w bazie " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
-            }
-            else
-            {
-                Console.WriteLine("Procesy się różnią " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
-                AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
-            }
+            ////////////Porównuje status dokumentów
+            //////////int idDocTEST = badanyDoc;//8401183;
+            //////////int stateFPTEST = _statusDoc;//1;
+            //////////int validTEST = 0;
+            //////////if (_stateDoc.ToString() == _stateForProcess.ToString())
+            //////////{
+            //////////    Console.WriteLine("Procesy są takie same. Status w bazie " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
+            //////////}
+            //////////else
+            //////////{
+            //////////    Console.WriteLine("Procesy się różnią " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
+            //////////    AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
+            //////////}
             Console.WriteLine(" ");
 
             // AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
@@ -200,16 +199,16 @@ namespace TEST_Skanuj_to
 
             //program.GetIdListByCmpID(_idUser, _documentName); //lista po id company
 
-            //Pobiera dane dokumentu po id
-            try
-            {
-                program.GetDocumentById(badanyDoc); //ok zwraca dane dokumentu o ile dokument jest wgrany 
-                Console.WriteLine("_idContractor ->" + _idContractor + " nazwa: " + _nameContractor + " NIP sprzedawcy: " + _nipContractor + " adres " + _adressContractor);
-                Console.WriteLine("idBuyer -> " + _idBuyer + " nazwa " + _nameBuyer + " nip " + _nipBuyer + " adres " + _adressBuyer);
-                Console.WriteLine("GetDocumentById(" + _idDocument + ")" + " nazwa dokumentu -> " + _documentName);
-            }
-            catch { Console.WriteLine("Nie można pobrać danych dokumentu " + _idDocument + " nazwa dokumentu-> " + _documentName + "."); }
-            Console.WriteLine(" ");
+            //////////Pobiera dane dokumentu po id
+            ////////try
+            ////////{
+            ////////    program.GetDocumentById(badanyDoc); //ok zwraca dane dokumentu o ile dokument jest wgrany 
+            ////////    Console.WriteLine("_idContractor ->" + _idContractor + " nazwa: " + _nameContractor + " NIP sprzedawcy: " + _nipContractor + " adres " + _adressContractor);
+            ////////    Console.WriteLine("idBuyer -> " + _idBuyer + " nazwa " + _nameBuyer + " nip " + _nipBuyer + " adres " + _adressBuyer);
+            ////////    Console.WriteLine("GetDocumentById(" + _idDocument + ")" + " nazwa dokumentu -> " + _documentName);
+            ////////}
+            ////////catch { Console.WriteLine("Nie można pobrać danych dokumentu " + _idDocument + " nazwa dokumentu-> " + _documentName + "."); }
+            ////////Console.WriteLine(" ");
 
             // program.GetDocumentsListByCmpID(_idUser);
             // Console.WriteLine(" ");
@@ -462,7 +461,7 @@ namespace TEST_Skanuj_to
 
         }//AktualizujStateInDB()
 
-        public static void ZapiszDoBazy()
+        public static void SaveToDB()
         {
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
@@ -489,13 +488,13 @@ namespace TEST_Skanuj_to
                 }//using
             }//using
 
-        }//ZapiszDoBazy()
+        }//SaveToDB()
 
         /// <summary>
         /// Sprawdza status dokumentu w bazie danych
         /// </summary>
         /// <param name="idDOC">id dokumentu</param>
-        public static void SprawdzStatusInDB(int idDOC)
+        public static void FindStatusInDB(int idDOC)
         {
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
@@ -544,7 +543,7 @@ namespace TEST_Skanuj_to
             }// foreach
 
             sqlConnection.Close();
-        }//SprawdzStatusInDB()
+        }//FindStatusInDB()
 
 
         public static void AktualizujStatusDoc(int idDoc, int stateFP, int valid)
@@ -1321,6 +1320,45 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             return Execute<DocumentOneXt>(request);
         }// GetDocumentById(int id)
 
+
+        public static string _BruttoWalutaPodstawowa;
+        public static string _CategoryDesc;
+        public static string _CzyNieKompletnaPozycja;
+        public static string _DataSprzedazy;
+        public static string _DataWplywu;
+        public static string _DataWystawienia;
+        public static string _FakturaKorygowana;
+        public static string _Kategoria;
+        public static string _KategoriaId;
+        public static string _KontoBankowe;
+        public static string _Korygujaca;
+        public static string _KursWaluty;
+        public static string _MiesiacKsiegowy;
+        public static string _NabywcaAdres;
+        public static string _NabywcaKod;
+        public static string _NabywcaMiejscowosc;
+        public static string _NabywcaNazwa;
+        public static string _NabywcaNip;
+        public static string _NettoWalutaPodstawowa;
+        public static string _NrFaktury;
+        public static string _NrZamowienia;
+        public static string _PrzyczynaKorekty;
+        public static string _RazemBrutto;
+        public static string _RazemNetto;
+        public static string _RazemVAT;
+        public static string _SposobPlatnosci;
+        public static string _SprzedawcaAdres;
+        public static string _SprzedawcaKod;
+        public static string _SprzedawcaMiejscowosc;
+        public static string _SprzedawcaNazwa;
+        public static string _SprzedawcaNip;
+        public static string _TerminPlatnosci;
+        public static string _VatWalutaPodstawowa;
+        public static string _Waluta;
+        public static string _Zaplacono;
+
+
+
         /// <summary>
         /// OK Odszukuje id dokumentu wgranego wcześniej po nazwie dokumentu.
         /// </summary>
@@ -1353,6 +1391,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp = (data["attributes"]["BruttoWalutaPodstawowa"]["is_valid"]).ToString();
                 int statusA = data["attributes"]["BruttoWalutaPodstawowa"]["status"];
                 string value = (data["attributes"]["BruttoWalutaPodstawowa"]["value"]);
+                _BruttoWalutaPodstawowa = value;
                 string atr = "Brutto Waluta Podstawowa ";
 
                 if (statusA == 1)
@@ -1371,6 +1410,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp1 = (data["attributes"]["CategoryDesc"]["is_valid"]).ToString();
                 int statusA1 = data["attributes"]["CategoryDesc"]["status"];
                 string value1 = (data["attributes"]["CategoryDesc"]["value"]);
+                _CategoryDesc = value1;
                 string atr1 = "CategoryDesc ";
                 if (statusA1 == 1)
                 {
@@ -1388,6 +1428,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp2 = (data["attributes"]["CzyNieKompletnaPozycja"]["is_valid"]).ToString();
                 int statusA2 = data["attributes"]["CzyNieKompletnaPozycja"]["status"];
                 string value2 = (data["attributes"]["CzyNieKompletnaPozycja"]["value"]);
+                _CzyNieKompletnaPozycja = value2;
                 string atr2 = "CzyNieKompletnaPozycja ";
                 if (statusA2 == 1)
                 {
@@ -1405,6 +1446,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp3 = (data["attributes"]["DataSprzedazy"]["is_valid"]).ToString();
                 int statusA3 = data["attributes"]["DataSprzedazy"]["status"];
                 string value3 = (data["attributes"]["DataSprzedazy"]["value"]);
+                _DataSprzedazy = value3;
                 string atr3 = "DataSprzedazy ";
                 if (statusA3 == 1)
                 {
@@ -1422,6 +1464,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp4 = (data["attributes"]["DataWplywu"]["is_valid"]).ToString();
                 int statusA4 = data["attributes"]["DataWplywu"]["status"];
                 string value4 = (data["attributes"]["DataWplywu"]["value"]);
+                _DataWplywu = value4;
                 string atr4 = "DataWplywu ";
                 if (statusA4 == 1)
                 {
@@ -1440,6 +1483,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp6 = (data["attributes"]["DataWystawienia"]["is_valid"]).ToString();
                 int statusA6 = data["attributes"]["DataWystawienia"]["status"];
                 string value6 = (data["attributes"]["DataWystawienia"]["value"]);
+                _DataWystawienia = value6;
                 string atr6 = "DataWystawienia ";
                 if (statusA6 == 1)
                 {
@@ -1457,6 +1501,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp7 = (data["attributes"]["FakturaKorygowana"]["is_valid"]).ToString();
                 int statusA7 = data["attributes"]["FakturaKorygowana"]["status"];
                 string value7 = (data["attributes"]["FakturaKorygowana"]["value"]);
+                _FakturaKorygowana = value7;
                 string atr7 = "FakturaKorygowana ";
                 if (statusA7 == 1)
                 {
@@ -1474,6 +1519,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp8 = (data["attributes"]["Kategoria"]["is_valid"]).ToString();
                 int statusA8 = data["attributes"]["Kategoria"]["status"];
                 string value8 = (data["attributes"]["Kategoria"]["value"]);
+                _Kategoria = value8;
                 string atr8 = "Kategoria ";
                 if (statusA8 == 1)
                 {
@@ -1492,6 +1538,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp5 = (data["attributes"]["KategoriaId"]["is_valid"]).ToString();
                 int statusA5 = data["attributes"]["KategoriaId"]["status"];
                 string value5 = (data["attributes"]["KategoriaId"]["value"]);
+                _KategoriaId = value5;
                 string atr5 = "KategoriaId ";
                 if (statusA5 == 1)
                 {
@@ -1509,6 +1556,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp9 = (data["attributes"]["KontoBankowe"]["is_valid"]).ToString();
                 int statusA9 = data["attributes"]["KontoBankowe"]["status"];
                 string value9 = (data["attributes"]["KontoBankowe"]["value"]);
+                _KontoBankowe = value9;
                 string atr9 = "KontoBankowe ";
                 if (statusA9 == 1)
                 {
@@ -1527,6 +1575,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp10 = (data["attributes"]["Korygujaca"]["is_valid"]).ToString();
                 int statusA10 = data["attributes"]["Korygujaca"]["status"];
                 string value10 = (data["attributes"]["Korygujaca"]["value"]);
+                _Korygujaca = value10;
                 string atr10 = "Korygujaca ";
                 if (statusA10 == 1)
                 {
@@ -1545,6 +1594,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp11 = (data["attributes"]["KursWaluty"]["is_valid"]).ToString();
                 int statusA11 = data["attributes"]["KursWaluty"]["status"];
                 string value11 = (data["attributes"]["KursWaluty"]["value"]);
+                _KursWaluty = value11;
                 string atr11 = "KursWaluty ";
                 if (statusA11 == 1)
                 {
@@ -1563,6 +1613,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp12 = (data["attributes"]["MiesiacKsiegowy"]["is_valid"]).ToString();
                 int statusA12 = data["attributes"]["MiesiacKsiegowy"]["status"];
                 string value12 = (data["attributes"]["MiesiacKsiegowy"]["value"]);
+                _MiesiacKsiegowy = value12;
                 string atr12 = "MiesiacKsiegowy ";
                 if (statusA12 == 1)
                 {
@@ -1581,6 +1632,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp13 = (data["attributes"]["NabywcaAdres"]["is_valid"]).ToString();
                 int statusA13 = data["attributes"]["NabywcaAdres"]["status"];
                 string value13 = (data["attributes"]["NabywcaAdres"]["value"]);
+                _NabywcaAdres = value13;
                 string atr13 = "NabywcaAdres ";
                 if (statusA13 == 1)
                 {
@@ -1598,6 +1650,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp14 = (data["attributes"]["NabywcaKod"]["is_valid"]).ToString();
                 int statusA14 = data["attributes"]["NabywcaKod"]["status"];
                 string value14 = (data["attributes"]["NabywcaKod"]["value"]);
+                _NabywcaKod = value14;
                 string atr14 = "NabywcaKod ";
                 if (statusA14 == 1)
                 {
@@ -1616,6 +1669,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp15 = (data["attributes"]["NabywcaMiejscowosc"]["is_valid"]).ToString();
                 int statusA15 = data["attributes"]["NabywcaMiejscowosc"]["status"];
                 string value15 = (data["attributes"]["NabywcaMiejscowosc"]["value"]);
+                _NabywcaMiejscowosc = value15;
                 string atr15 = "NabywcaMiejscowosc ";
                 if (statusA15 == 1)
                 {
@@ -1634,6 +1688,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp16 = (data["attributes"]["NabywcaNazwa"]["is_valid"]).ToString();
                 int statusA16 = data["attributes"]["NabywcaNazwa"]["status"];
                 string value16 = (data["attributes"]["NabywcaNazwa"]["value"]);
+                _NabywcaNazwa = value16;
                 string atr16 = "NabywcaNazwa ";
                 if (statusA16 == 1)
                 {
@@ -1652,6 +1707,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp17 = (data["attributes"]["NabywcaNip"]["is_valid"]).ToString();
                 int statusA17 = data["attributes"]["NabywcaNip"]["status"];
                 string value17 = (data["attributes"]["NabywcaNip"]["value"]);
+                _NabywcaNip = value17;
                 string atr17 = "NabywcaNip ";
                 if (statusA17 == 1)
                 {
@@ -1670,6 +1726,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp18 = (data["attributes"]["NettoWalutaPodstawowa"]["is_valid"]).ToString();
                 int statusA18 = data["attributes"]["NettoWalutaPodstawowa"]["status"];
                 string value18 = (data["attributes"]["NettoWalutaPodstawowa"]["value"]);
+                _NettoWalutaPodstawowa = value18;
                 string atr18 = "NettoWalutaPodstawowa ";
                 if (statusA18 == 1)
                 {
@@ -1688,6 +1745,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp19 = (data["attributes"]["NrFaktury"]["is_valid"]).ToString();
                 int statusA19 = data["attributes"]["NrFaktury"]["status"];
                 string value19 = (data["attributes"]["NrFaktury"]["value"]);
+                _NrFaktury = value19;
                 string atr19 = "NrFaktury ";
                 if (statusA19 == 1)
                 {
@@ -1706,6 +1764,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp20 = (data["attributes"]["NrZamowienia"]["is_valid"]).ToString();
                 int statusA20 = data["attributes"]["NrZamowienia"]["status"];
                 string value20 = (data["attributes"]["NrZamowienia"]["value"]);
+                _NrZamowienia = value20;
                 string atr20 = "NrZamowienia ";
                 if (statusA20 == 1)
                 {
@@ -1724,6 +1783,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp21 = (data["attributes"]["PrzyczynaKorekty"]["is_valid"]).ToString();
                 int statusA21 = data["attributes"]["PrzyczynaKorekty"]["status"];
                 string value21 = (data["attributes"]["PrzyczynaKorekty"]["value"]);
+                _PrzyczynaKorekty = value21;
                 string atr21 = "PrzyczynaKorekty ";
                 if (statusA21 == 1)
                 {
@@ -1743,6 +1803,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp22 = (data["attributes"]["RazemBrutto"]["is_valid"]).ToString();
                 int statusA22 = data["attributes"]["RazemBrutto"]["status"];
                 string value22 = (data["attributes"]["RazemBrutto"]["value"]);
+                _RazemBrutto = value22;
                 string atr22 = "RazemBrutto";
                 if (statusA22 == 1)
                 {
@@ -1761,6 +1822,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp23 = (data["attributes"]["RazemNetto"]["is_valid"]).ToString();
                 int statusA23 = data["attributes"]["RazemNetto"]["status"];
                 string value23 = (data["attributes"]["RazemNetto"]["value"]);
+                _RazemNetto = value23;
                 string atr23 = "RazemNetto";
                 if (statusA23 == 1)
                 {
@@ -1780,6 +1842,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp24 = (data["attributes"]["RazemVAT"]["is_valid"]).ToString();
                 int statusA24 = data["attributes"]["RazemVAT"]["status"];
                 string value24 = (data["attributes"]["RazemVAT"]["value"]);
+                _RazemVAT = value24;
                 string atr24 = "RazemVAT";
                 if (statusA24 == 1)
                 {
@@ -1801,6 +1864,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp25 = (data["attributes"]["SposobPlatnosci"]["is_valid"]).ToString();
                 int statusA25 = data["attributes"]["SposobPlatnosci"]["status"];
                 string value25 = (data["attributes"]["SposobPlatnosci"]["value"]);
+                _SposobPlatnosci = value25;
                 string atr25 = "SposobPlatnosci";
                 if (statusA25 == 1)
                 {
@@ -1819,6 +1883,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp26 = (data["attributes"]["SprzedawcaAdres"]["is_valid"]).ToString();
                 int statusA26 = data["attributes"]["SprzedawcaAdres"]["status"];
                 string value26 = (data["attributes"]["SprzedawcaAdres"]["value"]);
+                _SprzedawcaAdres = value26;
                 string atr26 = "SprzedawcaAdres";
                 if (statusA26 == 1)
                 {
@@ -1837,6 +1902,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp27 = (data["attributes"]["SprzedawcaKod"]["is_valid"]).ToString();
                 int statusA27 = data["attributes"]["SprzedawcaKod"]["status"];
                 string value27 = (data["attributes"]["SprzedawcaKod"]["value"]);
+                _SprzedawcaKod = value27;
                 string atr27 = "SprzedawcaKod";
                 if (statusA27 == 1)
                 {
@@ -1855,6 +1921,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp28 = (data["attributes"]["SprzedawcaMiejscowosc"]["is_valid"]).ToString();
                 int statusA28 = data["attributes"]["SprzedawcaMiejscowosc"]["status"];
                 string value28 = (data["attributes"]["SprzedawcaMiejscowosc"]["value"]);
+                _SprzedawcaMiejscowosc = value28;
                 string atr28 = "SprzedawcaMiejscowosc";
                 if (statusA28 == 1)
                 {
@@ -1872,6 +1939,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp29 = (data["attributes"]["SprzedawcaNazwa"]["is_valid"]).ToString();
                 int statusA29 = data["attributes"]["SprzedawcaNazwa"]["status"];
                 string value29 = (data["attributes"]["SprzedawcaNazwa"]["value"]);
+                _SprzedawcaNazwa = value29;
                 string atr29 = "SprzedawcaNazwa";
                 if (statusA29 == 1)
                 {
@@ -1889,6 +1957,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp30 = (data["attributes"]["SprzedawcaNip"]["is_valid"]).ToString();
                 int statusA30 = data["attributes"]["SprzedawcaNip"]["status"];
                 string value30 = (data["attributes"]["SprzedawcaNip"]["value"]);
+                _SprzedawcaNip = value30;
                 string atr30 = "SprzedawcaNip";
                 if (statusA30 == 1)
                 {
@@ -1906,6 +1975,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp31 = (data["attributes"]["TerminPlatnosci"]["is_valid"]).ToString();
                 int statusA31 = data["attributes"]["TerminPlatnosci"]["status"];
                 string value31 = (data["attributes"]["TerminPlatnosci"]["value"]);
+                _TerminPlatnosci = value31;
                 string atr31 = "TerminPlatnosci";
                 if (statusA31 == 1)
                 {
@@ -1923,6 +1993,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp32 = (data["attributes"]["VatWalutaPodstawowa"]["is_valid"]).ToString();
                 int statusA32 = data["attributes"]["VatWalutaPodstawowa"]["status"];
                 string value32 = (data["attributes"]["VatWalutaPodstawowa"]["value"]);
+                _VatWalutaPodstawowa = value32;
                 string atr32 = "VatWalutaPodstawowa";
                 if (statusA32 == 1)
                 {
@@ -1940,6 +2011,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp33 = (data["attributes"]["Waluta"]["is_valid"]).ToString();
                 int statusA33 = data["attributes"]["Waluta"]["status"];
                 string value33 = (data["attributes"]["Waluta"]["value"]);
+                _Waluta = value33;
                 string atr33 = "Waluta";
                 if (statusA33 == 1)
                 {
@@ -1957,6 +2029,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 string rozp34 = (data["attributes"]["Zaplacono"]["is_valid"]).ToString();
                 int statusA34 = data["attributes"]["Zaplacono"]["status"];
                 string value34 = (data["attributes"]["Zaplacono"]["value"]);
+                _Zaplacono = value34;
                 string atr34 = "Zaplacono";
                 if (statusA34 == 1)
                 {
@@ -1969,77 +2042,241 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 }
             }
             catch { };
+            _documentName = (data["name"]);
+            Console.WriteLine("Dokument " + _documentName);
 
-            // Console.WriteLine("GetDataFromDoc " + content);
+            //dane szczegółowe faktury
+            foreach (var val in data["positions"])
+            {
+                string nameProduct = val["Nazwa"];
+                int Ilosc = val["Ilosc"];
+                int Validation = val["is_valid"]; // pobiera validation 
+                string zero = "0";
+                string jeden = "1";
+
+                if (Validation.ToString() == zero)
+                {
+                    Console.WriteLine("Problem z rozpoznaniem warości (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                }
+                else if (Validation.ToString() == jeden)
+                {
+                    Console.WriteLine("Poprawnie rozpoznane (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                }
+            }
+
+            Console.WriteLine("GetDataFromDoc " + content);
             return Execute<DocumentOneXt>(request);
         }//GetDataFromDoc(int id)
 
-        public void CreateXML(string filename)
+        class Pozycja
         {
+            public string _IdProduct;
+            public string _Product_code;
+            public string _Nazwa;
+            public string _Ilosc;
+            public string _Jednostka;
+            public string _Cena;
+            public string _Brutto;
+            public string _Netto;
+            public string _StawkaVAT;
+            public string _VAT;
+
+            private string IdProductField;
+            private string ProductcodeField;
+            private string NazwaField;
+            private string IloscField;
+            private string JednostkaField;
+            private string CenaField;
+            private string BruttoField;
+            private string NettoField;
+            private string StawkaVATField;
+            private string VatField;
+
+
+
+            public string IdProduct
+            {
+                get { return IdProductField; }
+                set { IdProductField = value; }
+            }
+            public string Product_code
+            {
+                get { return ProductcodeField; }
+                set { ProductcodeField = value; }
+            }
+            public string Nazwa
+            {
+                get { return NazwaField; }
+                set { NazwaField = value; }
+            }
+            public string Ilosc
+            {
+                get { return IloscField; }
+                set { IloscField = value; }
+            }
+           public string Jednostka
+            {
+                get { return JednostkaField; }
+                set { JednostkaField = value; }
+            }
+            public string Cena
+            {
+                get { return CenaField; }
+                set { CenaField = value; }
+            }
+            public string Brutto
+            {
+                get { return BruttoField; }
+                set { BruttoField = value; }
+            }
+            public string Netto
+            {
+                get { return NettoField; }
+                set { NettoField = value; }
+            }
+            public string StawkaVAT
+            {
+                get { return StawkaVATField; }
+                set { StawkaVATField = value; }
+            }
+            public string Vat
+            {
+                get { return VatField; }
+                set { VatField = value; }
+            }
+
+            
+            /* 
+        
+            private double Brutto;
+            private double Netto;
+            private string StawkaVAT;
+            private double Vat;*/
+            public Pozycja(string IdProductField, string ProductcodeField, string NazwaField, string IloscField, string JednostkaField, string CenaField, string BruttoField, string NettoField, string StawkaVATField, string VatField)
+            {
+                this.IdProduct = IdProductField;
+                this.Product_code = ProductcodeField;
+                this.Nazwa = NazwaField;
+                this.Ilosc = IloscField;
+                this.Jednostka = JednostkaField;
+                this.Cena = CenaField;
+                this.Brutto = BruttoField;
+                this.Netto = NettoField;
+                this.StawkaVAT = StawkaVATField;
+                this.Vat = VatField;
+            }
+
+        }//class Pozycja
+
+
+
+        public void CreateXML(string filepath)
+        {
+            List<Pozycja> listaPozycji = new List<Pozycja>();
+            listaPozycji.Add(new Pozycja("Nazwa JABŁKA LUZ", "256", "222", "IdProductField 1", "Ilosc 4", "kg", "Netto 256", "StawkaVAT 23%", "VAT 230", "product_code 456"));
+            listaPozycji.Add(new Pozycja("Nazwa Gruszki LUZ", "444.45", "999", "IdProductField 2", "Ilosc 41", "kg", "Netto 999", "StawkaVAT 23%", "VAT 456", "product_code XXX"));
+            listaPozycji.Add(new Pozycja("Nazwa Pomarańcze LUZ", "333", "888.12", "IdProductField 3", "Ilosc 8", "kg", "Netto 4446", "StawkaVAT 8%", "VAT 998", "product_code OOO"));
+
             XDocument xml = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"),
                 new XElement("Dokument", new XAttribute("version", "2.0"),
                 new XElement("Dane", new XElement("Test", "1.0"),
-                new XElement("Atrybuty",
-                     new XElement("BruttoWalutaPodstawowa", 250),
-                     new XElement("CategoryDesc", "CategoryDesc"),
-                     new XElement("CzyNieKompletnaPozycja", "CzyNieKompletnaPozycja"),
-                     new XElement("DataSprzedazy", "DataSprzedazy"),
-                     new XElement("DataWplywu", "DataWplywu"),
-                     new XElement("DataWystawienia", "DataWystawienia"),
-                     new XElement("FakturaKorygowana", "FakturaKorygowana"),
-                     new XElement("Kategoria", "Kategoria"),
-                     new XElement("KategoriaId", "KategoriaId"),
-                     new XElement("KontoBankowe", "KontoBankowe")
+                 new XElement("Nabywca",
+                     new XElement("NabywcaAdres", _NabywcaAdres),
+                     new XElement("NabywcaKod", _NabywcaKod),
+                     new XElement("NabywcaMiejscowosc", _NabywcaMiejscowosc),
+                     new XElement("NabywcaNazwa", _NabywcaNazwa),
+                     new XElement("NabywcaNip", _NabywcaNip)
                 ),
-                new XElement("Nabywca",
-                     new XElement("NabywcaAdres", "NabywcaAdres"),
-                     new XElement("NabywcaKod", "NabywcaKod"),
-                     new XElement("NabywcaMiejscowosc", "NabywcaMiejscowosc"),
-                     new XElement("NabywcaNazwa", "NabywcaNazwa"),
-                     new XElement("NabywcaNip", "NabywcaNip")
+                new XElement("Sprzedawca",
+                     new XElement("SprzedawcaAdres", _SprzedawcaAdres),
+                     new XElement("SprzedawcaKod", _SprzedawcaKod),
+                     new XElement("SprzedawcaMiejscowosc", _SprzedawcaMiejscowosc),
+                     new XElement("SprzedawcaNazwa", _SprzedawcaNazwa),
+                     new XElement("SprzedawcaNip", _SprzedawcaNip),
+                     new XElement("KontoBankowe", _KontoBankowe)
+                ),
+                new XElement("DaneFaktury",
+                     new XElement("NrFaktury", _NrFaktury),
+                     new XElement("FakturaKorygowana", _FakturaKorygowana),
+                     new XElement("Korygujaca", _Korygujaca),
+                     new XElement("PrzyczynaKorekty", _PrzyczynaKorekty),
+                     new XElement("DataSprzedazy", _DataSprzedazy),
+                     new XElement("DataWplywu", _DataWplywu),
+                     new XElement("DataWystawienia", _DataWystawienia),
+                     new XElement("MiesiacKsiegowy", _MiesiacKsiegowy),
+                     new XElement("NrZamowienia", _NrZamowienia),
+                        new XElement("Pozycje",
+                        from pozycja in listaPozycji
+                        select new XElement("pozycja",
+                            new XElement("Nazwa", pozycja.Nazwa),
+                            new XElement("Brutto", pozycja.Brutto),
+                            new XElement("Cena", pozycja.Cena),
+                            new XElement("IdProductField", pozycja.IdProduct),
+                            new XElement("Ilosc", pozycja.Ilosc),
+                            new XElement("Jednostka", pozycja.Jednostka),
+                            new XElement("Netto", pozycja.Netto),
+                            new XElement("StawkaVAT", pozycja.StawkaVAT),
+                             new XElement("VAT", pozycja.Vat),
+                            new XElement("product_code", pozycja.Product_code)
+                        ),
+                     new XElement("BruttoWalutaPodstawowa", _BruttoWalutaPodstawowa),
+                     new XElement("CategoryDesc", _CategoryDesc),
+                     new XElement("CzyNieKompletnaPozycja", _CzyNieKompletnaPozycja),
+                     new XElement("Kategoria", _Kategoria),
+                     new XElement("KategoriaId", _KategoriaId),
+                     new XElement("Waluta", _Waluta),
+                     new XElement("KursWaluty", _KursWaluty),
+                     new XElement("NettoWalutaPodstawowa", _NettoWalutaPodstawowa),
+                     new XElement("RazemNetto", _RazemNetto),
+                     new XElement("RazemVAT", _RazemVAT),
+                     new XElement("VatWalutaPodstawowa", _VatWalutaPodstawowa),
+                     new XElement("RazemBrutto", _RazemBrutto),
+                     new XElement("SposobPlatnosci", _SposobPlatnosci),
+                     new XElement("TerminPlatnosci", _TerminPlatnosci),
+                     new XElement("Zaplacono", _Zaplacono)
+                )
                 ))));
-            xml.Save("Test.xml");
-
-            //"BruttoWalutaPodstawowa"
-            //        "CategoryDesc"
-            //        "CzyNieKompletnaPozycja"
-            //        "DataSprzedazy"
-            //        "DataWplywu"
-            //        "DataWystawienia"
-            //        "FakturaKorygowana"
-            //        "Kategoria"
-            //        "KategoriaId"
-            //        "KontoBankowe"
-            //        "Korygujaca"
-            //        "KursWaluty"
-            //        "MiesiacKsiegowy"
-            //        "NabywcaAdres"
-            //        "NabywcaKod"
-            //        "NabywcaMiejscowosc"
-            //        "NabywcaNazwa"
-            //        "NabywcaNip"
-            //        "NettoWalutaPodstawowa"
-            //        "NrFaktury"
-            //        "NrZamowienia"
-            //        "PrzyczynaKorekty"
-            //        "RazemBrutto"
-            //        "RazemNetto"
-            //        "RazemVAT"
-            //        "SposobPlatnosci"
-            //        "SprzedawcaAdres"
-            //        "SprzedawcaKod": 
-            //        "SprzedawcaMiejscowosc":
-            //        "SprzedawcaNazwa":
-            //        "SprzedawcaNip": 
-            //        "TerminPlatnosci": 
-            //        "VatWalutaPodstawowa":
-            //        "Waluta": 
-            //        "Zaplacono": 
-
-
+            xml.Save(_endFileName);
 
         }//CreateXML(string filename)
+
+        //"BruttoWalutaPodstawowa"
+        //        "CategoryDesc"
+        //        "CzyNieKompletnaPozycja"
+        //        "DataSprzedazy"
+        //        "DataWplywu"
+        //        "DataWystawienia"
+        //        "FakturaKorygowana"
+        //        "Kategoria"
+        //        "KategoriaId"
+        //        "KontoBankowe"
+        //        "Korygujaca"
+        //        "KursWaluty"
+        //        "MiesiacKsiegowy"
+        //        "NabywcaAdres"
+        //        "NabywcaKod"
+        //        "NabywcaMiejscowosc"
+        //        "NabywcaNazwa"
+        //        "NabywcaNip"
+        //        "NettoWalutaPodstawowa"
+        //        "NrFaktury"
+        //        "NrZamowienia"
+        //        "PrzyczynaKorekty"
+        //        "RazemBrutto"
+        //        "RazemNetto"
+        //        "RazemVAT"
+        //        "SposobPlatnosci"
+        //        "SprzedawcaAdres"
+        //        "SprzedawcaKod": 
+        //        "SprzedawcaMiejscowosc":
+        //        "SprzedawcaNazwa":
+        //        "SprzedawcaNip": 
+        //        "TerminPlatnosci": 
+        //        "VatWalutaPodstawowa":
+        //        "Waluta": 
+        //        "Zaplacono": 
+
 
         class Atrybuty
         {
@@ -2100,45 +2337,10 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             public string VatWalutaPodstawowa { get; set; }
             public string Waluta { get; set; }
             public string Zaplacono { get; set; }
-
-
-            //        ""
-            //        ""
-            //        "DataWystawienia"
-            //        ""
-            //        "Kategoria"
-            //        "KategoriaId"
-            //        ""
-            //        "Korygujaca"
-            //        ""
-            //        ""
-            //        "NabywcaAdres"
-            //        "NabywcaKod"
-            //        "NabywcaMiejscowosc"
-            //        "NabywcaNazwa"
-            //        "NabywcaNip"
-            //        "NettoWalutaPodstawowa"
-            //        "NrFaktury"
-            //        "NrZamowienia"
-            //        "PrzyczynaKorekty"
-            //        "RazemBrutto"
-            //        "RazemNetto"
-            //        "RazemVAT"
-            //        "SposobPlatnosci"
-            //        "SprzedawcaAdres"
-            //        "SprzedawcaKod": 
-            //        "SprzedawcaMiejscowosc":
-            //        "SprzedawcaNazwa":
-            //        "SprzedawcaNip": 
-            //        "TerminPlatnosci": 
-            //        "VatWalutaPodstawowa":
-            //        "Waluta": 
-            //        "Zaplacono": 
-
         }
 
 
-        public void WriteXMLToFile(int idDoc)
+        public void WriteInfoToFile(int idDoc)
         {
             string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
             string filename = name + "_" + idDoc + ".xml";
@@ -2157,7 +2359,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                     CreateXML(filepath);
                     WriteToFile("Wygenerowano " + filename + " " + DateTime.Now);
                 }
-                catch { WriteToFile("Problem z wygenerowaniem pliku" + filename); }
+                catch { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
             }
             else
             {
@@ -2167,12 +2369,57 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                     WriteToFile("Zaktualizowano plik " + filename + " " + DateTime.Now);
                 }
                 catch
-                { WriteToFile("Problem z wygenerowaniem pliku" + filename); }
+                { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
             }
 
-        }// WriteXMLToFile
+        }// WriteInfoToFile
 
+        /// <summary>
+        /// Pokazuje poziom odczytu pozycji w dokumencie o podanym id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public DocumentOneXt GetDataVeryficationByIdDoc(int id) // // // // ok
+        {
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
+            request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
+            request.AddParameter("id", id, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            dynamic data = JObject.Parse(JsonArrayString);
+
+            _documentName = (data["name"]);
+            Console.WriteLine("Dokument " + _documentName);
+
+            //dane faktury
+            foreach (var val in data["positions"])
+            {
+                string nameProduct = val["Nazwa"];
+                int Ilosc = val["Ilosc"];
+                int Validation = val["is_valid"]; // pobiera validation 
+                string zero = "0";
+                string jeden = "1";
+
+                if (Validation.ToString() == zero)
+                {
+                    Console.WriteLine("Problem z rozpoznaniem warości (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                }
+                else if (Validation.ToString() == jeden)
+                {
+                    Console.WriteLine("Poprawnie rozpoznane (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                }
+            }
+
+            Console.WriteLine(" GetVeryficationStateByIdDoc(int id) " + content);
+            return Execute<DocumentOneXt>(request);
+        }// GetDocumentById(int id)
 
 
 
@@ -2466,9 +2713,9 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
          * "positions":[{"is_valid":"1","statusExp":0,"VAT":17.22,"Code":"MBW2","Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"",
          * "Category2Desc":"","e
          * 
-         *_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"TYP TRANSAKCJI: WYNAJEM MBW2-MATA NIEBIESKA 115X200","Ilosc":1,"Jednostka":"","Cena":74.88,"Netto":74.88,"StawkaVAT":23,"Brutto":92.1,"IdProduct":""},
+         *_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"TYP TRANSAKCJI: WYNAJEM MBW2-MATA NIEBIESKA 115X200","Ilosc":1,"Jednostka":"","Cena":74.88,"Netto":74.88,"StawkaVAT":23,"Brutto":92.1,"IdProductField":""},
          * 
-         * {"VAT":28.7,"Code":"MBW4","is_valid":"1","statusExp":0,"Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"","Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"MBW4-MATA NIEBIESKA 150X300","Ilosc":1,"Jednostka":"","Cena":124.8,"Netto":124.8,"StawkaVAT":23,"Brutto":153.5,"IdProduct":""},{"is_valid":"1","statusExp":0,"VAT":0.01,"Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"","Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"CENT_DIFFERENCE_1","Ilosc":1,"Jednostka":"","Cena":0,"Netto":0,"StawkaVAT":23,"Brutto":0.01,"IdProduct":""}],
+         * {"VAT":28.7,"Code":"MBW4","is_valid":"1","statusExp":0,"Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"","Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"MBW4-MATA NIEBIESKA 150X300","Ilosc":1,"Jednostka":"","Cena":124.8,"Netto":124.8,"StawkaVAT":23,"Brutto":153.5,"IdProductField":""},{"is_valid":"1","statusExp":0,"VAT":0.01,"Kategoria":"","KategoriaId":"","CategoryDesc":"","Kategoria2":"","KategoriaId2":"","Category2Desc":"","ext_id":"","product_code":"","product_type":"","product_desc":"","Nazwa":"CENT_DIFFERENCE_1","Ilosc":1,"Jednostka":"","Cena":0,"Netto":0,"StawkaVAT":23,"Brutto":0.01,"IdProductField":""}],
          * 
          * "company":{"cmp_id":7085933,"cmp_creation_time":"2019-06-07 11:34:05.338385","cmp_update_time":"2019-07-24 11:34:58.460944","cmp_remove_time":"1970-01-01 00:00:00","cmp_version":1,"cmp_name":"KR GROUP SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104 SP\u00d3\u0141KA KOMANDYTOWA","cmp_tax_number":"1132602742","cmp_tax_country_code":"","cmp_regon":null,"cmp_phone":"222628110","cmp_fax":null,"cmp_email":null,"cmp_web_page":null,"cmp_default_address_as_string":"ul. Skaryszewska 7, 03-802 Warszawa","cmp_test_account":false,"cmp_small_taxpayer":false,"cmp_vat_payer":true,"cmp_agreement_start_time":null,"cmp_removed":false,"cmp_type":"COMPANY","cmp_acc_office_fkey":null,"cmp_source_domain":"app.skanuj.to","cmp_source_params":"package=ST_MAXI&app=skto","cmp_branding_fkey":1,"cmp_owner_fkey":7082762,"cmp_registration_complete_date":"2019-06-07 12:48:24.650761","cmp_vat_declaration":null,"cmp_has_notverified_docs":true,"cmp_accounting_type":2,"cmp_cash_method":false,"cmp_display_name":"","cmp_migration_date":null,"cmp_provider":"","cmp_source_type":"WEB","cmp_campaign":"","cmp_email_invoice":null,"cmp_extra_information":null,"cmp_external_id":null,"id":7085933,"name":"KR GROUP SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104 SP\u00d3\u0141KA KOMANDYTOWA","nip":"1132602742","phone":"222628110","country":"PL","city":"Warszawa","post_code":"03-802","address":"ul. Skaryszewska 7","dir_name":"KR GROUP SPOLKA Z OGRANICZONA ODPOWIEDZIALNOSCIA SPOLKA KOMANDYTOWA . 7085933.1132602742","dbname":null},"percent":0,
          * "user_integration":{"user":"","pass":"","company":"","program_type":"","options":"","identstr":""}}*/
@@ -2619,7 +2866,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
 
             private double cenaBrutto;
             public double CenaBrutto { get { return cenaBrutto; } set { cenaBrutto = Convert.ToDouble(value); } }
-            //public string IdProduct { get; set; }
+            //public string IdProductField { get; set; }
 
             private string kategoriaOdliczenieVAT;
             public string KategoriaOdliczenieVAT { get { return kategoriaOdliczenieVAT; } set { kategoriaOdliczenieVAT = value; } }
