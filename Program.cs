@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 using File = System.IO.File;
 
@@ -21,7 +22,7 @@ namespace nsTEST_Skanuj_to
 
     class Program
     {
-        private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
+        //private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
         static string _fileName = System.Configuration.ConfigurationManager.AppSettings["fileName"].ToString();//"Test.pdf";//"Test.pdf";
         static string _path = System.Configuration.ConfigurationManager.AppSettings["path"].ToString() + _fileName; //C:\\Konektora "C:/Users/polann/Desktop/pliki_do_konectora/Test.pdf";
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
@@ -65,7 +66,7 @@ namespace nsTEST_Skanuj_to
         public static string _2DB_uploaded_date;
         public static int _2DB_user_id;
         public static int _2DB_validated;
-
+        //dane do xml
         public static string _BruttoWalutaPodstawowa;
         public static string _CategoryDesc;
         public static string _CzyNieKompletnaPozycja;
@@ -101,17 +102,8 @@ namespace nsTEST_Skanuj_to
         public static string _VatWalutaPodstawowa;
         public static string _Waluta;
         public static string _Zaplacono;
+        List<PozycjaXml> _listaPozycji = new List<PozycjaXml>(); //lista pozycji wyszczególnionych na fa.
 
-        public string _IdProduct;
-        public string _Product_code;
-        public string _Nazwa;
-        public string _Ilosc;
-        public string _Jednostka;
-        public string _Cena;
-        public string _Brutto;
-        public string _Netto;
-        public string _StawkaVAT;
-        public string _VAT;
         public static void Main(string[] args)
         {
             Program program = new Program();
@@ -181,20 +173,21 @@ namespace nsTEST_Skanuj_to
             //OK sprawdz czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
             //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
             int badanyDoc = 8185903;
-            program.WriteInfoToFile(badanyDoc);
+            //program.WriteInfoToFile(badanyDoc);
             Console.WriteLine("Badany doc -> " + badanyDoc);
 
             //program.GetVeryficationStateByIdDoc(badanyDoc); // _stateDoc dokumentu o podanym id
             Console.WriteLine(" ");
-
+            program.FillPositionFromDocToXml(badanyDoc);
+            Console.WriteLine(" ");
             SaveToDB();//zapisuje do bazy dane nowego dokumentu do śledzenia.
 
 
             program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
 
             Console.WriteLine("utworzono xml");
-            program.CreateXML((program._endFileName).ToString()); //OK zapis danych do xml
-
+            //program.CreateXML((program._endFileName).ToString()); //OK zapis danych do xml
+            program.CreateXML();
 
             //TODO AktualizujStateInDB()
             //AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
@@ -324,7 +317,7 @@ namespace nsTEST_Skanuj_to
             Console.WriteLine("GetToken ->" + content);// odpowiedz
             return Execute<Token>(request);
         }//public Token GetToken(string email, string apikey)
-                
+
         /// <summary>
         /// Pobiera dane firmy: praca w kontekście firm.
         /// </summary>
@@ -495,9 +488,6 @@ namespace nsTEST_Skanuj_to
 
             }
 
-
-
-
         }//AktualizujStateInDB()
 
         public static void SaveToDB()
@@ -523,7 +513,6 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
                     command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
                     command.Parameters.AddWithValue("@validated", value: _2DB_validated);
-
                 }//using
             }//using
 
@@ -746,7 +735,7 @@ namespace nsTEST_Skanuj_to
             return response.Data;
         }//T Execute<T>(RestRequest request) where T : new()
 
-       
+
         //OK pobranie listy dokumentów w obrębie 1 firmy.
         public List<DocumentList> GetDocumentsListByCmpID(int company_id)
         {
@@ -1102,30 +1091,6 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             dynamic data = JObject.Parse(jArray[0].ToString());
 
             Console.WriteLine("data.id -> " + _idDocument + " nazwa dokumentu " + NazwaDoc);
-
-            /*[{
-        "DataWystawienia": "2019-05-21",
-        "NrFaktury": "2564\/MAG\/2019",
-        "RazemBrutto": "530.63",
-        "added_by_email": "w.radzikowski@krgroup.pl",
-        "added_by_name": "Wojciech Radzikowski",
-        "cmp_name": "KR GROUP SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104 SP\u00d3\u0141KA KOMANDYTOWA",
-        "company_id": 7085933,
-        "contractor_name": "GRUPA MARCOVA POLSKA OFFICE SP\u00d3\u0141KA Z OGRANICZON\u0104 ODPOWIEDZIALNO\u015aCI\u0104 SP\u00d3\u0141KA KOMANDYTOWA",
-        "file_path_hq": "https:\/\/app.skanuj.to\/customer\/get-pdf\/hash\/cb5c2a1727489e9ef8ce8d94ac1ddc1f\/id\/8185917",
-        "hash": "cb5c2a1727489e9ef8ce8d94ac1ddc1f",
-        "id": 8185917,
-        "last_modified": "2019-07-01 11:54:57.20007",
-        "registry": null,
-        "type": 2,
-        "type_dict": "Faktura zakupu",
-        "verified_at": "2019-07-01 11:54:57.20007",
-        "verified_by_email": "w.radzikowski@krgroup.pl",
-        "verified_by_name": "Wojciech Radzikowski"
-    }, ...
-]*/
-
-
             Console.WriteLine(" .GetIdListByCmpID(_idUser); " + content);// odpowiedz
 
             return Execute<List<DocumentList>>(request);
@@ -1204,7 +1169,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             return Execute<SkApiResponse>(request);
         }//addCompanies()
 
-        
+
         public List<CompanyList> GetCompanyLists(int company_id)
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -1969,141 +1934,95 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             _documentName = (data["name"]);
             Console.WriteLine("Dokument " + _documentName);
 
-            //dane szczegółowe faktury
-            foreach (var val in data["positions"])
-            {
-                string nameProduct = val["Nazwa"];
-                int Ilosc = val["Ilosc"];
-                int Validation = val["is_valid"]; // pobiera validation 
-                string zero = "0";
-                string jeden = "1";
 
-                if (Validation.ToString() == zero)
-                {
-                    Console.WriteLine("Problem z rozpoznaniem warości (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
-                }
-                else if (Validation.ToString() == jeden)
-                {
-                    Console.WriteLine("Poprawnie rozpoznane (" + Validation + "): Nazwa " + nameProduct + ", Ilosc " + Ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
-                }
-            }
-
-            Console.WriteLine("GetDataFromDoc " + content);
+            //Console.WriteLine("GetDataFromDoc " + content);
             return Execute<DocumentOneXt>(request);
         }//GetDataFromDoc(int id)
 
-        //class Pozycja
-        //{
-        //    //public string _IdProduct;
-        //    //public string _Product_code;
-        //    //public string _Nazwa;
-        //    //public string _Ilosc;
-        //    //public string _Jednostka;
-        //    //public string _Cena;
-        //    //public string _Brutto;
-        //    //public string _Netto;
-        //    //public string _StawkaVAT;
-        //    //public string _VAT;
-
-        //    private string IdProductField;
-        //    private string ProductcodeField;
-        //    private string NazwaField;
-        //    private string IloscField;
-        //    private string JednostkaField;
-        //    private string CenaField;
-        //    private string BruttoField;
-        //    private string NettoField;
-        //    private string StawkaVATField;
-        //    private string VatField;
-
-        //    public string IdProduct
-        //    {
-        //        get { return IdProductField; }
-        //        set { IdProductField = value; }
-        //    }
-        //    public string Product_code
-        //    {
-        //        get { return ProductcodeField; }
-        //        set { ProductcodeField = value; }
-        //    }
-        //    public string Nazwa
-        //    {
-        //        get { return NazwaField; }
-        //        set { NazwaField = value; }
-        //    }
-        //    public string Ilosc
-        //    {
-        //        get { return IloscField; }
-        //        set { IloscField = value; }
-        //    }
-        //   public string Jednostka
-        //    {
-        //        get { return JednostkaField; }
-        //        set { JednostkaField = value; }
-        //    }
-        //    public string Cena
-        //    {
-        //        get { return CenaField; }
-        //        set { CenaField = value; }
-        //    }
-        //    public string Brutto
-        //    {
-        //        get { return BruttoField; }
-        //        set { BruttoField = value; }
-        //    }
-        //    public string Netto
-        //    {
-        //        get { return NettoField; }
-        //        set { NettoField = value; }
-        //    }
-        //    public string StawkaVAT
-        //    {
-        //        get { return StawkaVATField; }
-        //        set { StawkaVATField = value; }
-        //    }
-        //    public string Vat
-        //    {
-        //        get { return VatField; }
-        //        set { VatField = value; }
-        //    }
-
-            
-        //    /* 
-        //    private double Brutto;
-        //    private double Netto;
-        //    private string StawkaVAT;
-        //    private double Vat;*/
-        //    public Pozycja(string IdProductField, string ProductcodeField, string NazwaField, string IloscField, string JednostkaField, string CenaField, string BruttoField, string NettoField, string StawkaVATField, string VatField)
-        //    {
-        //        this.IdProduct = IdProductField;
-        //        this.Product_code = ProductcodeField;
-        //        this.Nazwa = NazwaField;
-        //        this.Ilosc = IloscField;
-        //        this.Jednostka = JednostkaField;
-        //        this.Cena = CenaField;
-        //        this.Brutto = BruttoField;
-        //        this.Netto = NettoField;
-        //        this.StawkaVAT = StawkaVATField;
-        //        this.Vat = VatField;
-        //    }
-
-        //}//class Pozycja
 
 
-
-        public void CreateXML(string filepath)
+        /// <summary>
+        /// Zapisuje do tabeli pozycję art z faktury z walidacją (do zapisu w XML)
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public DocumentOneXt FillPositionFromDocToXml(int id) // // // // ok
         {
-            //TODO zapis danych do tabeli
-            List<Pozycja> listaPozycji = new List<Pozycja>();
-            //foreach (DataRow row in listaPozycji)
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
+
+            request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
+            request.AddParameter("id", id, ParameterType.GetOrPost);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            dynamic data = JObject.Parse(JsonArrayString);
+            _documentName = (data["name"]);
+            //pobranie rozpoznanych wartości dokumentu. 
+            //List<PozycjaXml> _listaPozycji = new List<PozycjaXml>();
+            //dane szczegółowe faktury
+            foreach (var val in data["positions"])
+            {
+                //Array.Resize(ref data["positions"], suma + 1);
+                //dane z Json
+                string idProduct = val["IdProduct"];
+                string product_code = val["product_code"];
+                string nazwa = val["Nazwa"];
+                double ilosc = val["Ilosc"];
+                string jednostka = val["Jednostka"];
+                double cena = val["Cena"];
+                double brutto = val["Brutto"];
+                double netto = val["Netto"];
+                int stawkaVAT = val["StawkaVAT"];
+                double vAT = val["VAT"];
+
+                var pozycja = new nsXml.PozycjaXml();
+                pozycja.IdProduct = idProduct.ToString();
+                pozycja.Product_code = product_code.ToString();
+                pozycja.Nazwa = nazwa.ToString();
+                pozycja.Ilosc = double.Parse(ilosc.ToString());
+                pozycja.Jednostka = jednostka.ToString();
+                pozycja.Cena = double.Parse(cena.ToString());
+                pozycja.Brutto = double.Parse(brutto.ToString());
+                pozycja.Netto = double.Parse(netto.ToString());
+                pozycja.StawkaVAT = int.Parse(stawkaVAT.ToString());
+                pozycja.Vat = double.Parse(vAT.ToString());
+
+                _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat));
+
+                int validation = val["is_valid"]; // pobiera validation 
+                string zero = "0";
+                string jeden = "1";
+
+                if (validation.ToString() == zero)
+                {
+                    Console.WriteLine("Problem z rozpoznaniem warości (" + validation + "): Nazwa " + nazwa + ", Ilosc " + ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                }
+                else if (validation.ToString() == jeden)
+                {
+                    Console.WriteLine("Poprawnie rozpoznane (" + validation + "): Nazwa " + nazwa + ", Ilosc " + ilosc + "Brutto " + val["Brutto"] + ", Netto " + val["Netto"] + ", StawkaVAT " + val["StawkaVAT"] + ", kwota VAT " + val["VAT"]);
+                }
+            }//foreach
+
+            //foreach (PozycjaXml pozycjaXml in _listaPozycji)
             //{
-            //    Array.Resize()
+            //    Console.WriteLine(pozycjaXml.Nazwa + " " + pozycjaXml.Ilosc);
             //}
 
-            listaPozycji.Add(new Pozycja("Nazwa JABŁKA LUZ", "256", "222", "IdProductField 1", "Ilosc 4", "kg", "Netto 256", "StawkaVAT 23%", "VAT 230", "product_code 456"));
-            listaPozycji.Add(new Pozycja("Nazwa Gruszki LUZ", "444.45", "999", "IdProductField 2", "Ilosc 41", "kg", "Netto 999", "StawkaVAT 23%", "VAT 456", "product_code XXX"));
-            listaPozycji.Add(new Pozycja("Nazwa Pomarańcze LUZ", "333", "888.12", "IdProductField 3", "Ilosc 8", "kg", "Netto 4446", "StawkaVAT 8%", "VAT 998", "product_code OOO"));
 
+            return Execute<DocumentOneXt>(request);
+        }//FillPositionFromDocToXml(int id)
+
+        /// <summary>
+        /// Tworzy strukturę xml.
+        /// </summary>
+        /// <param name="filepath"></param>
+        public void CreateXML()
+        {
             XDocument xml = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"),
                 new XElement("Dokument", new XAttribute("version", "2.0"),
@@ -2123,7 +2042,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                      new XElement("SprzedawcaNip", _SprzedawcaNip),
                      new XElement("KontoBankowe", _KontoBankowe)
                 ),
-                new XElement("DaneFaktury",
+                new XElement("Numeracja_i_daty",
                      new XElement("NrFaktury", _NrFaktury),
                      new XElement("FakturaKorygowana", _FakturaKorygowana),
                      new XElement("Korygujaca", _Korygujaca),
@@ -2131,10 +2050,18 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                      new XElement("DataSprzedazy", _DataSprzedazy),
                      new XElement("DataWplywu", _DataWplywu),
                      new XElement("DataWystawienia", _DataWystawienia),
-                     new XElement("MiesiacKsiegowy", _MiesiacKsiegowy),
+                     new XElement("MiesiacKsiegowy", _MiesiacKsiegowy)
+                     ),
+                new XElement("Kwoty",
                      new XElement("NrZamowienia", _NrZamowienia),
+                      new XElement("CategoryDesc", _CategoryDesc),
+                     new XElement("CzyNieKompletnaPozycja", _CzyNieKompletnaPozycja),
+                     new XElement("Kategoria", _Kategoria),
+                     new XElement("KategoriaId", _KategoriaId),
+                     new XElement("Waluta", _Waluta),
+                     new XElement("KursWaluty", _KursWaluty),
                         new XElement("Pozycje",
-                        from pozycja in listaPozycji
+                        from pozycja in _listaPozycji
                         select new XElement("pozycja",
                             new XElement("Nazwa", pozycja.Nazwa),
                             new XElement("Brutto", pozycja.Brutto),
@@ -2148,12 +2075,6 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                             new XElement("product_code", pozycja.Product_code)
                         ),
                      new XElement("BruttoWalutaPodstawowa", _BruttoWalutaPodstawowa),
-                     new XElement("CategoryDesc", _CategoryDesc),
-                     new XElement("CzyNieKompletnaPozycja", _CzyNieKompletnaPozycja),
-                     new XElement("Kategoria", _Kategoria),
-                     new XElement("KategoriaId", _KategoriaId),
-                     new XElement("Waluta", _Waluta),
-                     new XElement("KursWaluty", _KursWaluty),
                      new XElement("NettoWalutaPodstawowa", _NettoWalutaPodstawowa),
                      new XElement("RazemNetto", _RazemNetto),
                      new XElement("RazemVAT", _RazemVAT),
@@ -2164,63 +2085,27 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                      new XElement("Zaplacono", _Zaplacono)
                 )
                 ))));
-            xml.Save(_endFileName);
 
-        }//CreateXML(string filename)
+            //string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
+            string nr = _NrFaktury.ToString().Replace('/', '_');
+            string filename = "Fa_nr_"+nr+".txt";
 
-        //"BruttoWalutaPodstawowa"
-        //        "CategoryDesc"
-        //        "CzyNieKompletnaPozycja"
-        //        "DataSprzedazy"
-        //        "DataWplywu"
-        //        "DataWystawienia"
-        //        "FakturaKorygowana"
-        //        "Kategoria"
-        //        "KategoriaId"
-        //        "KontoBankowe"
-        //        "Korygujaca"
-        //        "KursWaluty"
-        //        "MiesiacKsiegowy"
-        //        "NabywcaAdres"
-        //        "NabywcaKod"
-        //        "NabywcaMiejscowosc"
-        //        "NabywcaNazwa"
-        //        "NabywcaNip"
-        //        "NettoWalutaPodstawowa"
-        //        "NrFaktury"
-        //        "NrZamowienia"
-        //        "PrzyczynaKorekty"
-        //        "RazemBrutto"
-        //        "RazemNetto"
-        //        "RazemVAT"
-        //        "SposobPlatnosci"
-        //        "SprzedawcaAdres"
-        //        "SprzedawcaKod": 
-        //        "SprzedawcaMiejscowosc":
-        //        "SprzedawcaNazwa":
-        //        "SprzedawcaNip": 
-        //        "TerminPlatnosci": 
-        //        "VatWalutaPodstawowa":
-        //        "Waluta": 
-        //        "Zaplacono": 
+            //string path = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
 
-        public void WriteInfoToFile(int idDoc)
-        {
-            string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
-            string filename = name + "_" + idDoc + ".xml";
-            string path = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
-            string filepath = path + "\\" + DateTime.Now.ToShortDateString().Replace('/', '_') + "_" + filename;
+            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Zkonektora";
+            string filepath = path + "\\Zkonektora" +"\\"+ filename.ToString();
 
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
+            //if (!Directory.Exists(path))
+            //{
+            //    Directory.CreateDirectory(path);
+            //}
 
+           // xml.Save(filename);
             if (!File.Exists(filepath))
             {
                 try
                 {
-                    CreateXML(filepath);
+                    xml.Save(filename);
                     WriteToFile("Wygenerowano " + filename + " " + DateTime.Now);
                 }
                 catch { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
@@ -2229,14 +2114,46 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             {
                 try
                 {
-                    CreateXML(filepath);
+                    xml.Save(filename);
                     WriteToFile("Zaktualizowano plik " + filename + " " + DateTime.Now);
                 }
                 catch
                 { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
             }
+            
+        }//CreateXML(string filename)
 
-        }// WriteInfoToFile
+
+        //public void WriteInfoToFile(int idDoc)
+        //{
+        //    
+
+        //    if (!Directory.Exists(path))
+        //    {
+        //        Directory.CreateDirectory(path);
+        //    }
+
+        //    if (!File.Exists(filepath))
+        //    {
+        //        try
+        //        {
+        //            CreateXML(filepath);
+        //            WriteToFile("Wygenerowano " + filename + " " + DateTime.Now);
+        //        }
+        //        catch { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
+        //    }
+        //    else
+        //    {
+        //        try
+        //        {
+        //            CreateXML(filepath);
+        //            WriteToFile("Zaktualizowano plik " + filename + " " + DateTime.Now);
+        //        }
+        //        catch
+        //        { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
+        //    }
+
+        //}// WriteInfoToFile
 
         /// <summary>
         /// Pokazuje poziom odczytu pozycji w dokumencie o podanym id.

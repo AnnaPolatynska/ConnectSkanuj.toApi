@@ -4,18 +4,29 @@ using System.Text;
 
 namespace nsXml
 {
-    class Pozycja
+    public partial class PozycjaXml
     {
+
+        /*string idProduct = val["IdProduct"];
+                string product_code = val["product_code"];
+                string nazwa = val["Nazwa"];
+                double ilosc = val["Ilosc"];
+                string jednostka = val["Jednostka"];
+                double cena = val["Cena"];
+                double brutto = val["Brutto"];
+                double netto = val["Netto"];
+                int stawkaVAT = val["StawkaVAT"];
+                double vAT = val["VAT"];*/
         private string IdProductField;
         private string ProductcodeField;
         private string NazwaField;
-        private string IloscField;
+        private double IloscField;
         private string JednostkaField;
-        private string CenaField;
-        private string BruttoField;
-        private string NettoField;
-        private string StawkaVATField;
-        private string VatField;
+        private double CenaField;
+        private double BruttoField;
+        private double NettoField;
+        private int StawkaVATField;
+        private double VatField;
 
         public string IdProduct
         {
@@ -32,7 +43,7 @@ namespace nsXml
             get { return NazwaField; }
             set { NazwaField = value; }
         }
-        public string Ilosc
+        public double Ilosc
         {
             get { return IloscField; }
             set { IloscField = value; }
@@ -42,33 +53,33 @@ namespace nsXml
             get { return JednostkaField; }
             set { JednostkaField = value; }
         }
-        public string Cena
+        public double Cena
         {
             get { return CenaField; }
             set { CenaField = value; }
         }
-        public string Brutto
+        public double Brutto
         {
             get { return BruttoField; }
             set { BruttoField = value; }
         }
-        public string Netto
+        public double Netto
         {
             get { return NettoField; }
             set { NettoField = value; }
         }
-        public string StawkaVAT
+        public int StawkaVAT
         {
             get { return StawkaVATField; }
             set { StawkaVATField = value; }
         }
-        public string Vat
+        public double Vat
         {
             get { return VatField; }
             set { VatField = value; }
         }
 
-        public Pozycja(string IdProductField, string ProductcodeField, string NazwaField, string IloscField, string JednostkaField, string CenaField, string BruttoField, string NettoField, string StawkaVATField, string VatField)
+        public PozycjaXml(string IdProductField, string ProductcodeField, string NazwaField, double IloscField, string JednostkaField, double CenaField, double BruttoField, double NettoField, int StawkaVATField, double VatField)
         {
             this.IdProduct = IdProductField;
             this.Product_code = ProductcodeField;
@@ -82,6 +93,9 @@ namespace nsXml
             this.Vat = VatField;
         }
 
+        public PozycjaXml()
+        {
+        }
     }//class Pozycja
 
     class Nabywca
