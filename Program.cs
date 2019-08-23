@@ -8,7 +8,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
-using System.Xml;
 using System.Xml.Linq;
 using File = System.IO.File;
 
@@ -22,6 +21,8 @@ namespace nsTEST_Skanuj_to
 
     class Program
     {
+
+        #region _ogólnodostępne
         //private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
         static string _fileName = System.Configuration.ConfigurationManager.AppSettings["fileName"].ToString();//"Test.pdf";//"Test.pdf";
         static string _path = System.Configuration.ConfigurationManager.AppSettings["path"].ToString() + _fileName; //C:\\Konektora "C:/Users/polann/Desktop/pliki_do_konectora/Test.pdf";
@@ -103,6 +104,7 @@ namespace nsTEST_Skanuj_to
         public static string _Waluta;
         public static string _Zaplacono;
         List<PozycjaXml> _listaPozycji = new List<PozycjaXml>(); //lista pozycji wyszczególnionych na fa.
+        #endregion
 
         public static void Main(string[] args)
         {
@@ -126,49 +128,61 @@ namespace nsTEST_Skanuj_to
             catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
             Console.WriteLine(" ");
 
+
+
+
+
             //Działanie programu od wgrania dokumentu.
-            //try
-            //{
-            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu 8354510
+            try
+            {
+                program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu 8354510
 
-            //    //Console.WriteLine("C _idDocument -> " + _idDocument.ToString());
-            //    //Console.WriteLine("C nazwa wgranego dokumentu ->" + _documentName);
-            //    //Console.WriteLine("C info czy ponownie wgrane ->" + _notice);
-            //    _newIdDocument = _idDocument;//id nowo wgranego documentu 
+               
+                //Console.WriteLine("C nazwa wgranego dokumentu ->" + _documentName);
+                //Console.WriteLine("C info czy ponownie wgrane ->" + _notice);
+                _newIdDocument = _idDocument;//id nowo wgranego documentu 
+                Console.WriteLine("C _idDocument -> " + _2DB_doc_id.ToString() + " nazwa " + _2DB_name.ToString());
 
-            //    //SaveToDB();//TODO zapisuje do bazy dane nowego dokumentu do śledzenia.
+                _idDocument = _2DB_doc_id;
+                _documentName = _2DB_name;
+                _uploadDate = _2DB_uploaded_date.ToString();
 
-            //    if (_notice == "file_already_exists") //jeżeli plik istneje
-            //    {
-            //        Console.WriteLine("Nie da się wgrać pliku o Id " + _idDocument + ". Plik " + _documentName + " został już wcześniej wgrany.");
-            //        //program.WriteToFile("Nie da się wgrać pliku. Plik " + _documentName + " - Id dokumentu " + _idDocument + " został już wcześniej wgrany.");
-            //        //TODO sprawdz id doc po nazwie dokumentu
+               
+                
 
-            //        //OK Odczyt statusu Dokumentu z DB 8401183 ma status 0 dodany
-            //        FindStatusInDB(8401183);
+                if (_notice == "file_already_exists") //jeżeli plik istneje
+                {
+                    Console.WriteLine("Nie da się wgrać pliku o Id " + _idDocument + ". Plik " + _documentName + " został już wcześniej wgrany.");
+                    //program.WriteToFile("Nie da się wgrać pliku. Plik " + _documentName + " - Id dokumentu " + _idDocument + " został już wcześniej wgrany.");
+                    //TODO sprawdz id doc po nazwie dokumentu
 
-
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-            //        //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-
-            //        //TODO zapis plików do sledzenia do tabeli?
+                    
+                    FindStatusInDB(8401183);//OK Odczyt statusu Dokumentu z DB 8401183 ma status 0 dodany
 
 
-            //        // sprawdza czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
-            //        //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            //        program.GetVeryficationStateByIdDoc(_newIdDocument);
+                }
+                else
+                {
+                    InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+                    
+                    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ")."); 
+                    //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
 
-            //    }
-            //}//try uploadDocument
+                    // sprawdza czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
+                    //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+                    program.GetVeryficationStateByIdDoc(_newIdDocument);
 
-
-
-            //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
+                }
+            }//try uploadDocument
+            catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
             Console.WriteLine(" ");
 
+            int doc_id = 123654;
+
+            UpdateDB(doc_id); //OK aktualizuje dane statusu dokumentu i validacji po id dokumentu
+
+
+            DeleteDB(doc_id); //OK Kasuje dane dokumentu po jego id.
 
             //OK sprawdz czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
             //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
@@ -178,16 +192,21 @@ namespace nsTEST_Skanuj_to
 
             //program.GetVeryficationStateByIdDoc(badanyDoc); // _stateDoc dokumentu o podanym id
             Console.WriteLine(" ");
-            program.FillPositionFromDocToXml(badanyDoc);
-            Console.WriteLine(" ");
-            SaveToDB();//zapisuje do bazy dane nowego dokumentu do śledzenia.
 
+
+         
+
+            program.FillPositionFromDocToXml(badanyDoc);//OK wgrywa poszczególne pozycję z fa do xml.
+
+            Console.WriteLine(" ");
+           
+
+            
 
             program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
-
-            Console.WriteLine("utworzono xml");
-            //program.CreateXML((program._endFileName).ToString()); //OK zapis danych do xml
-            program.CreateXML();
+            
+            
+            program.CreateXML();//OK zapis danych do xml
 
             //TODO AktualizujStateInDB()
             //AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
@@ -294,7 +313,7 @@ namespace nsTEST_Skanuj_to
 
         }//Main
 
-
+        #region logowanie_do_API
         // // // // // // // LOGOWANIE do API  https://app.skanuj.to/api // //
         /// <summary>
         /// LOGOWANIE
@@ -349,6 +368,7 @@ namespace nsTEST_Skanuj_to
             Console.WriteLine("getUserCompany -> " + content);// odpowiedz
             return Execute<SkApiResponse>(request);
         }//getUserCompany()
+        #endregion
 
         public SkApiResponse ifDocumentExist(int company_id, int document_id)
         {
@@ -428,10 +448,6 @@ namespace nsTEST_Skanuj_to
             _2DB_validated = (data["good-uploads"][0]["validated"]);
             _notice = (data["page_info"]["notice"]); //poprawność wgrania
 
-            _idDocument = _2DB_doc_id;
-            _documentName = _2DB_name;
-            _uploadDate = _2DB_uploaded_date.ToString();
-
             //if (infoState == 5)
             //{
             //    Console.WriteLine("state = 5 Dokument już istnieje");// odpowiedz
@@ -490,8 +506,69 @@ namespace nsTEST_Skanuj_to
 
         }//AktualizujStateInDB()
 
-        public static void SaveToDB()
+        public static void DeleteDB(int id_doc)
         {
+            string connString = _connString;
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlDelete = "DELETE FROM dbo.WgraneDoc WHERE doc_id = " + id_doc + ";";
+
+            using (SqlConnection sqlConnection = new SqlConnection(connString))
+            {
+                using (var command = new SqlCommand(sqlDelete, sqlConnection))
+                {
+                    sqlConnection.Open();
+                                 
+                    command.ExecuteNonQuery();
+                    sqlConnection.Close();
+                }
+            }
+        }//DeleteDB(int id_doc)
+
+        /// <summary>
+        /// Aktualizuje dane statusu i validacji w bazie danych
+        /// </summary>
+        /// <param name="id_doc"></param>
+        public static void UpdateDB(int id_doc)
+        {
+            int state= 1;
+            int validated = 1;
+
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlUpdate = "UPDATE dbo.WgraneDoc SET state = @state, validated = @validated WHERE doc_id = "+ id_doc +";";
+
+            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
+            {
+                using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
+                {
+                    sqlConnection1.Open();
+                   
+                    //    command.Parameters.AddWithValue("@doc_id", value: _2DB_doc_id);
+                    //    command.Parameters.AddWithValue("@name", value: _2DB_name);
+                    //    command.Parameters.AddWithValue("@state", value: _2DB_state);
+                    //    command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
+                    //    command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
+                    //    command.Parameters.AddWithValue("@validated", value: _2DB_validated);
+                   
+                    command.Parameters.AddWithValue("@state", state);
+                    command.Parameters.AddWithValue("@validated", validated);
+
+                    command.ExecuteNonQuery();
+                    sqlConnection1.Close();
+                }
+            }
+        }//UpdateDB(int id_doc)
+
+
+        public static void InsertIntoDB()
+        {
+            
+
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
             SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc;", sqlConnection);
@@ -513,10 +590,13 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
                     command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
                     command.Parameters.AddWithValue("@validated", value: _2DB_validated);
+
+                    command.ExecuteNonQuery();
+                    sqlConnection1.Close();
                 }//using
             }//using
 
-        }//SaveToDB()
+        }//InsertIntoDB()
 
         /// <summary>
         /// Sprawdza status dokumentu w bazie danych
@@ -603,42 +683,8 @@ namespace nsTEST_Skanuj_to
             sqlConnection.Close();
 
         }//AktualizujStatusDoc
-
-
-        // zapis do pliku ???
-        public void WriteDocToFile(int idDoc)
-        {
-            // końcowa nazwa pliku
-            string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();//"Test.pdf";
-            // katalog wyników
-            string _endPath = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
-
-            if (!Directory.Exists(_endPath))
-            {
-                Directory.CreateDirectory(_endPath);
-            }
-
-            if (!System.IO.File.Exists(_endFileName))
-            {
-                try
-                {
-                    //CreateDocument(enfFilePath)
-                    WriteToFile("Utworzono dokument " + _fileName);
-                }
-                catch { WriteToFile("Problem z utworzeniem dokumentu " + _fileName); }
-            }
-            else
-            {
-                try
-                {
-                    //CreateDocument(enfFilePath)}
-                    WriteToFile("Utworzono dokument " + _fileName);
-                }
-                catch { WriteToFile("Problem z utworzeniem dokumentu " + _fileName); }
-            }
-
-        }//WriteToFile
-
+        
+        
         /// <summary>
         /// Loggi do pliku w katalogu ArchiwumX
         /// </summary>
@@ -1248,6 +1294,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             return Execute<DocumentOneXt>(request);
         }// GetDocumentById(int id)
 
+        #region Dane_do_XML
         /// <summary>
         /// OK Odszukuje id dokumentu wgranego wcześniej po nazwie dokumentu.
         /// </summary>
@@ -2016,7 +2063,8 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
 
             return Execute<DocumentOneXt>(request);
         }//FillPositionFromDocToXml(int id)
-
+        #endregion
+        
         /// <summary>
         /// Tworzy strukturę xml.
         /// </summary>
@@ -2088,19 +2136,19 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
 
             //string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
             string nr = _NrFaktury.ToString().Replace('/', '_');
-            string filename = "Fa_nr_"+nr+".txt";
+            string filename = "Fa_nr_" + nr + ".txt";
 
             //string path = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
 
             string path = AppDomain.CurrentDomain.BaseDirectory + "\\Zkonektora";
-            string filepath = path + "\\Zkonektora" +"\\"+ filename.ToString();
+            string filepath = path + "\\Zkonektora" + "\\" + filename.ToString();
 
             //if (!Directory.Exists(path))
             //{
             //    Directory.CreateDirectory(path);
             //}
 
-           // xml.Save(filename);
+            // xml.Save(filename);
             if (!File.Exists(filepath))
             {
                 try
@@ -2120,7 +2168,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                 catch
                 { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
             }
-            
+
         }//CreateXML(string filename)
 
 
