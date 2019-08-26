@@ -55,11 +55,10 @@ namespace nsTEST_Skanuj_to
         public static int _idContractor;//id firmy z dokumentu do pobrania
         public static string _nameContractor; //nazwa firmy z dokumentu
         public static string _adressContractor;// adres sprzedawcy
-
         public static int _statusDoc = 0; //statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
-
         public static int _stateDoc;//Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
         public static int _stateForProcess; // status dokumentu w bazie
+
         //2DB
         public static int _2DB_doc_id;
         public static string _2DB_name;
@@ -67,6 +66,12 @@ namespace nsTEST_Skanuj_to
         public static string _2DB_uploaded_date;
         public static int _2DB_user_id;
         public static int _2DB_validated;
+
+        //dane odczytane z db
+        public static int _idDocInDB;
+        public static int _stateDocInDB;
+        public static int _validationInDB;
+       
         //dane do xml
         public static string _BruttoWalutaPodstawowa;
         public static string _CategoryDesc;
@@ -128,56 +133,59 @@ namespace nsTEST_Skanuj_to
             catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
             Console.WriteLine(" ");
 
+            ////Wgranie dokumentu do Api - dane do MSSerwer.
+            //try
+            //{
+
+            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _2DB_validated, _notice)
+
+            //    Console.WriteLine("C _idDocument -> " + _idDocument.ToString() + " nazwa " + _documentName.ToString());
+
+
+            //    if (_notice != "file_already_exists") //jeżeli plik jest nowy
+            //    {
+            //        InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+
+            //        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
+            //        //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
+
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Plik już istnieje.");
+            //    }
+            //}//try uploadDocument
+            //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
+            //Console.WriteLine(" ");
+
+
+            //sprawdzenie statusu dokumentów i aktualizacja w bazie.
+            //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+
+            FindStatusInDB();//OK Odczyt statusu Dokumentu z DB oraz jego aktualizacja w bazie po zmianie w json.
+           // Console.WriteLine("_idDocInDB " + _idDocInDB + "Consola  _stateDocInDB " + _stateDocInDB + " _validationInDB " + _validationInDB);
+
+           // program.GetIdDocumentList(_idDocInDB);
+            //int badanyDoc = 8185903;
+            //Console.WriteLine("Badany doc -> " + badanyDoc);
+
+
+
+           
 
 
 
 
-            //Działanie programu od wgrania dokumentu.
-            try
-            {
-                program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu 8354510
-
-               
-                //Console.WriteLine("C nazwa wgranego dokumentu ->" + _documentName);
-                //Console.WriteLine("C info czy ponownie wgrane ->" + _notice);
-                _newIdDocument = _idDocument;//id nowo wgranego documentu 
-                Console.WriteLine("C _idDocument -> " + _2DB_doc_id.ToString() + " nazwa " + _2DB_name.ToString());
-
-                _idDocument = _2DB_doc_id;
-                _documentName = _2DB_name;
-                _uploadDate = _2DB_uploaded_date.ToString();
-
-               
-                
-
-                if (_notice == "file_already_exists") //jeżeli plik istneje
-                {
-                    Console.WriteLine("Nie da się wgrać pliku o Id " + _idDocument + ". Plik " + _documentName + " został już wcześniej wgrany.");
-                    //program.WriteToFile("Nie da się wgrać pliku. Plik " + _documentName + " - Id dokumentu " + _idDocument + " został już wcześniej wgrany.");
-                    //TODO sprawdz id doc po nazwie dokumentu
-
-                    
-                    FindStatusInDB(8401183);//OK Odczyt statusu Dokumentu z DB 8401183 ma status 0 dodany
 
 
-                }
-                else
-                {
-                    InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-                    
-                    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ")."); 
-                    //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
 
-                    // sprawdza czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
-                    //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-                    program.GetVeryficationStateByIdDoc(_newIdDocument);
 
-                }
-            }//try uploadDocument
-            catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
-            Console.WriteLine(" ");
 
-            int doc_id = 123654;
+
+
+
+
+            int doc_id = 123;
 
             UpdateDB(doc_id); //OK aktualizuje dane statusu dokumentu i validacji po id dokumentu
 
@@ -186,34 +194,34 @@ namespace nsTEST_Skanuj_to
 
             //OK sprawdz czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
             //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            int badanyDoc = 8185903;
+
             //program.WriteInfoToFile(badanyDoc);
-            Console.WriteLine("Badany doc -> " + badanyDoc);
 
-            //program.GetVeryficationStateByIdDoc(badanyDoc); // _stateDoc dokumentu o podanym id
+
+            //program.GetVeryficationStateByIdDoc(badanyDoc); // stateDoc dokumentu o podanym id
             Console.WriteLine(" ");
 
 
-         
 
-            program.FillPositionFromDocToXml(badanyDoc);//OK wgrywa poszczególne pozycję z fa do xml.
+
+            //program.FillPositionFromDocToXml(badanyDoc);//OK wgrywa poszczególne pozycję z fa do xml.
 
             Console.WriteLine(" ");
-           
 
-            
 
-            program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
-            
-            
-            program.CreateXML();//OK zapis danych do xml
+
+
+            // program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
+
+
+            // program.CreateXML();//OK zapis danych do xml
 
             //TODO AktualizujStateInDB()
             //AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
 
 
             // FindStatusInDB(8401183); //OK sprawdza w Bazie status dokumentu o podanym id
-            //Console.WriteLine(" FindStatusInDB - stateForProcess => " + _stateForProcess);
+            //Console.WriteLine(" FindStatusInDB - stateDoc => " + _stateForProcess);
             Console.WriteLine(" ");
 
 
@@ -224,13 +232,13 @@ namespace nsTEST_Skanuj_to
             //////////int idDocTEST = badanyDoc;//8401183;
             //////////int stateFPTEST = _statusDoc;//1;
             //////////int validTEST = 0;
-            //////////if (_stateDoc.ToString() == _stateForProcess.ToString())
+            //////////if (stateDoc.ToString() == _stateForProcess.ToString())
             //////////{
-            //////////    Console.WriteLine("Procesy są takie same. Status w bazie " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
+            //////////    Console.WriteLine("Procesy są takie same. Status w bazie " + stateDoc.ToString() + " process " + _stateForProcess.ToString());
             //////////}
             //////////else
             //////////{
-            //////////    Console.WriteLine("Procesy się różnią " + _stateDoc.ToString() + " process " + _stateForProcess.ToString());
+            //////////    Console.WriteLine("Procesy się różnią " + stateDoc.ToString() + " process " + _stateForProcess.ToString());
             //////////    AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
             //////////}
             Console.WriteLine(" ");
@@ -254,7 +262,7 @@ namespace nsTEST_Skanuj_to
             //program.GetStateDocumentList(3); // Lista dokumentów gotowych do pobrania
             //Console.WriteLine(" ");
 
-            //program.ListIdToVeryfication(_stateDoc); //TODO lista znajduje wszystko
+            //program.ListIdToVeryfication(stateDoc); //TODO lista znajduje wszystko
 
             //int doc = 8185917;
             //program.GetInfoIfDocumentExist(doc); //ok Lista pobiera dane o stanie wszystkich dokumentów
@@ -440,31 +448,116 @@ namespace nsTEST_Skanuj_to
             dynamic data = JObject.Parse(JsonArrayString);
             int infoState = (data["good-uploads"][0]["state"]);
 
-            _2DB_doc_id = (data["good-uploads"][0]["doc_id"]);
-            _2DB_name = (data["good-uploads"][0]["name"]);
+            _idDocument = (data["good-uploads"][0]["doc_id"]);
+            _documentName = (data["good-uploads"][0]["name"]);
             _2DB_state = (data["good-uploads"][0]["state"]);
             _2DB_uploaded_date = (data["good-uploads"][0]["uploaded_date"]);
             _2DB_user_id = (data["good-uploads"][0]["user_id"]);
             _2DB_validated = (data["good-uploads"][0]["validated"]);
             _notice = (data["page_info"]["notice"]); //poprawność wgrania
 
-            //if (infoState == 5)
-            //{
-            //    Console.WriteLine("state = 5 Dokument już istnieje");// odpowiedz
-
-            //}
-            //else { Console.WriteLine("state = " + infoState); }
-
             Console.WriteLine("uploadDocument ->" + content);// odpowiedz
             return Execute<SkApiResponse>(request);
         }//SkApiResponse
+
+        #region 2DB
+
+        public static void DeleteDB(int id_doc)
+        {
+            string connString = _connString;
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlDelete = "DELETE FROM dbo.WgraneDoc WHERE doc_id = " + id_doc + ";";
+
+            using (SqlConnection sqlConnection = new SqlConnection(connString))
+            {
+                using (var command = new SqlCommand(sqlDelete, sqlConnection))
+                {
+                    sqlConnection.Open();
+
+                    command.ExecuteNonQuery();
+                    sqlConnection.Close();
+                }
+            }
+        }//DeleteDB(int id_doc)
+
+        /// <summary>
+        /// Aktualizuje dane statusu i validacji w bazie danych
+        /// </summary>
+        /// <param name="id_doc"></param>
+        public static void UpdateDB(int id_doc)
+        {
+            int state = _stateDoc;
+            int validated = 1;
+
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlUpdate = "UPDATE dbo.WgraneDoc SET state = @state, validated = @validated WHERE doc_id = " + id_doc + ";";
+
+            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
+            {
+                using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
+                {
+                    sqlConnection1.Open();
+
+                    //    command.Parameters.AddWithValue("@doc_id", value: _2DB_doc_id);
+                    //    command.Parameters.AddWithValue("@name", value: _2DB_name);
+                    //    command.Parameters.AddWithValue("@_stateForProcess", value: _2DB_state);
+                    //    command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
+                    //    command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
+
+
+                    command.Parameters.AddWithValue("@state", state);
+                    command.Parameters.AddWithValue("@validated", validated);
+
+                    command.ExecuteNonQuery();
+                    sqlConnection1.Close();
+                }
+            }
+        }//UpdateDB(int id_doc)
+
+
+        public static void InsertIntoDB()
+        {
+            string connString = _connString;
+            //SqlConnection sqlConnection = new SqlConnection(connString);
+            //SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc;", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            //sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            //sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, _validationInDB) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @_validationInDB);");
+
+            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
+            {
+                using (var command = new SqlCommand(sqlInsert, sqlConnection1))
+                {
+                    sqlConnection1.Open();
+                    command.Parameters.AddWithValue("@doc_id", value: _idDocument);
+                    command.Parameters.AddWithValue("@name", value: _documentName);
+                    command.Parameters.AddWithValue("@state", value: _2DB_state);
+                    command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
+                    command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
+                    command.Parameters.AddWithValue("@validated", value: _2DB_validated);
+
+                    command.ExecuteNonQuery();
+                    sqlConnection1.Close();
+                }//using
+            }//using
+
+        }//InsertIntoDB()
 
         public static void AktualizujStateInDB()
         {
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
             //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc WHERE validated = 5;", sqlConnection);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc WHERE _validationInDB = 5;", sqlConnection);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
             sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
@@ -492,7 +585,6 @@ namespace nsTEST_Skanuj_to
                             command.Parameters.AddWithValue("@state", value: _2DB_state);
                             //command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
                             //command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
-                            //command.Parameters.AddWithValue("@validated", value: _2DB_validated);
 
                             int rows = command.ExecuteNonQuery();
                             Console.WriteLine("AktualizujStateInDB -_____________> Dla dokumentu w DB " + _idDocument + " Zmianiono state na " + state);
@@ -506,108 +598,16 @@ namespace nsTEST_Skanuj_to
 
         }//AktualizujStateInDB()
 
-        public static void DeleteDB(int id_doc)
-        {
-            string connString = _connString;
-            DataSet dataSet = new DataSet("dbo.WgraneDoc");
-            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
-
-            var sqlDelete = "DELETE FROM dbo.WgraneDoc WHERE doc_id = " + id_doc + ";";
-
-            using (SqlConnection sqlConnection = new SqlConnection(connString))
-            {
-                using (var command = new SqlCommand(sqlDelete, sqlConnection))
-                {
-                    sqlConnection.Open();
-                                 
-                    command.ExecuteNonQuery();
-                    sqlConnection.Close();
-                }
-            }
-        }//DeleteDB(int id_doc)
 
         /// <summary>
-        /// Aktualizuje dane statusu i validacji w bazie danych
+        /// Porównuje i aktualizuje z jsona statusy dokumentów w bazie danych. 
         /// </summary>
-        /// <param name="id_doc"></param>
-        public static void UpdateDB(int id_doc)
+        public static void FindStatusInDB()
         {
-            int state= 1;
-            int validated = 1;
-
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
-            DataSet dataSet = new DataSet("dbo.WgraneDoc");
-            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
-
-            var sqlUpdate = "UPDATE dbo.WgraneDoc SET state = @state, validated = @validated WHERE doc_id = "+ id_doc +";";
-
-            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
-            {
-                using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
-                {
-                    sqlConnection1.Open();
-                   
-                    //    command.Parameters.AddWithValue("@doc_id", value: _2DB_doc_id);
-                    //    command.Parameters.AddWithValue("@name", value: _2DB_name);
-                    //    command.Parameters.AddWithValue("@state", value: _2DB_state);
-                    //    command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
-                    //    command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
-                    //    command.Parameters.AddWithValue("@validated", value: _2DB_validated);
-                   
-                    command.Parameters.AddWithValue("@state", state);
-                    command.Parameters.AddWithValue("@validated", validated);
-
-                    command.ExecuteNonQuery();
-                    sqlConnection1.Close();
-                }
-            }
-        }//UpdateDB(int id_doc)
-
-
-        public static void InsertIntoDB()
-        {
-            
-
-            string connString = _connString;
-            SqlConnection sqlConnection = new SqlConnection(connString);
+            // "_stateForProcess": 1, /* 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji
             SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc;", sqlConnection);
-            DataSet dataSet = new DataSet("dbo.WgraneDoc");
-            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
-            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
-            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
-
-            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, validated) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @validated);");
-
-            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
-            {
-                using (var command = new SqlCommand(sqlInsert, sqlConnection1))
-                {
-                    sqlConnection1.Open();
-                    command.Parameters.AddWithValue("@doc_id", value: _2DB_doc_id);
-                    command.Parameters.AddWithValue("@name", value: _2DB_name);
-                    command.Parameters.AddWithValue("@state", value: _2DB_state);
-                    command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
-                    command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
-                    command.Parameters.AddWithValue("@validated", value: _2DB_validated);
-
-                    command.ExecuteNonQuery();
-                    sqlConnection1.Close();
-                }//using
-            }//using
-
-        }//InsertIntoDB()
-
-        /// <summary>
-        /// Sprawdza status dokumentu w bazie danych
-        /// </summary>
-        /// <param name="idDOC">id dokumentu</param>
-        public static void FindStatusInDB(int idDOC)
-        {
-            string connString = _connString;
-            SqlConnection sqlConnection = new SqlConnection(connString);
-            // "state": 1, /* 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji
-            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc WHERE doc_id = " + idDOC + ";", sqlConnection); //WHERE state = 3
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
             sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
@@ -616,43 +616,89 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                int stateForProcess = int.Parse((dataRow[@"state"].ToString()));
-                _stateForProcess = stateForProcess;
-                if (stateForProcess == 0)
+                _stateDocInDB = int.Parse((dataRow[@"state"].ToString()));
+                _validationInDB = int.Parse((dataRow[@"validated"].ToString()));
+                _idDocInDB = int.Parse(dataRow["doc_id"].ToString());
+
+
+                if (_stateDocInDB == 0)
                 {
-                    idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + idDOC + " ma status " + stateForProcess + " dodany");
+                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
+                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " dodany " + _validationInDB);
+
                 }
-                else if (stateForProcess == 1)
+                else if (_stateDocInDB == 1)
                 {
-                    idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + idDOC + " ma status " + stateForProcess + " w przetwarzaniu");
+                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
+                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " w przetwarzaniu " + _validationInDB);
                 }
-                else if (stateForProcess == 2)
+                else if (_stateDocInDB == 2)
                 {
-                    idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + idDOC + " ma status " + stateForProcess + " w zweryfikowany");
+                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
+                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " w zweryfikowany " + _validationInDB);
                 }
-                else if (stateForProcess == 3)
+                else if (_stateDocInDB == 3)
                 {
-                    idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + idDOC + " ma status " + stateForProcess + " do weryfikacji");
+                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
+                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " do weryfikacji " + _validationInDB);
                 }
-                else if (stateForProcess == 4)
+                else if (_stateDocInDB == 4)
                 {
-                    idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + idDOC + " ma status " + stateForProcess + " wielostronicowy brak akcji");
+                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
+                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " wielostronicowy brak akcji " + _validationInDB);
                 }
                 else
                 {
-                    idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Problem z ustaleniem statusu " + stateForProcess + " dokumentu " + idDOC);
+                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
+                    Console.WriteLine("Dokument " + _idDocInDB + " - problem z ustaleniem statusu " + _stateDocInDB + " " + _validationInDB);
+                }
+
+                var client = new RestClient("http://app.skanuj.to/api");
+                var request = new RestRequest();
+                request.Resource = "document/mode/search";
+                request.AddHeader("token", _tokenS.ToString());
+                request.AddHeader("company_id", _idUser.ToString());
+
+                request.AddParameter("id", _idDocInDB, ParameterType.HttpHeader);
+                //request.AddParameter("count", 3, ParameterType.GetOrPost);
+
+                IRestResponse restResponse = client.Execute(request);
+                var content = restResponse.Content;
+                var JsonArrayString = content;
+                JArray jArray = JArray.Parse(JsonArrayString);
+                dynamic data = JObject.Parse(jArray[0].ToString());
+                int dlugosc = data.all_count;
+                dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString());
+                _stateDoc = data1.state;
+                Console.WriteLine(" dla dokumentu " + _idDocInDB + " status jsonArray " + _stateDoc );
+
+                request.AddQueryParameter("id", _idDocInDB.ToString());
+                //request.AddQueryParameter("statusExp", _statusDoc.ToString());
+
+                //Console.WriteLine("GetIdDocumentList -> " + content);// odpowiedz
+
+                Program program = new Program();
+                program.Execute<List<DocumentList>>(request);
+
+
+                if (_stateDocInDB != _stateDoc)
+                {
+                    Console.WriteLine("procesy rożnią się.");
+                    Console.WriteLine("id dokumentu z bazy "+_idDocInDB + "_stateDoc " + _stateDoc + " _stateDocInDB " + _stateDocInDB);
+
+                    UpdateDB(_idDocInDB);
+                    Console.WriteLine("Z aktualizowano statusy w bazie dla dokumentu " + _idDocInDB);
+                }
+                else
+                {
+                    Console.WriteLine("procesy zgodne -> _stateDoc " + _stateDoc + " _stateDocInDB " + _stateDocInDB);
                 }
             }// foreach
 
             sqlConnection.Close();
         }//FindStatusInDB()
 
+        #endregion
 
         public static void AktualizujStatusDoc(int idDoc, int stateFP, int valid)
         {
@@ -666,7 +712,7 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                var sqlUpdate = "UPDATE dbo.WgraneDoc SET validated = @validated, state = @state WHERE doc_id = @doc_id;";
+                var sqlUpdate = "UPDATE dbo.WgraneDoc SET _validationInDB = @_validationInDB, state = @state WHERE doc_id = @doc_id;";
                 using (SqlConnection sqlConnection1 = new SqlConnection(connString))
                 {
                     using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
@@ -674,7 +720,7 @@ namespace nsTEST_Skanuj_to
                         sqlConnection1.Open();
                         command.Parameters.AddWithValue("@doc_id", idDoc);
                         command.Parameters.AddWithValue("@state", stateFP);
-                        command.Parameters.AddWithValue("@validated", valid);
+                        command.Parameters.AddWithValue("validated", valid);
                         int rows = command.ExecuteNonQuery();
                         idDoc = int.Parse(dataRow["doc_id"].ToString());
                     }
@@ -683,8 +729,8 @@ namespace nsTEST_Skanuj_to
             sqlConnection.Close();
 
         }//AktualizujStatusDoc
-        
-        
+
+
         /// <summary>
         /// Loggi do pliku w katalogu ArchiwumX
         /// </summary>
@@ -733,7 +779,7 @@ namespace nsTEST_Skanuj_to
             request.AddParameter("id", idDoc, ParameterType.GetOrPost);
             //request.AddParameter("mode", "change-statusExp", ParameterType.GetOrPost);
             //request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
-            // request.AddParameter("state", _stateDoc, ParameterType.GetOrPost);
+            // request.AddParameter("_stateForProcess", stateDoc, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
@@ -891,7 +937,7 @@ namespace nsTEST_Skanuj_to
             //{
             //    Console.WriteLine("cmp_id w pętli-> " + prop["cmp_id"]);
             //}
-            Console.WriteLine("GetInfoIfDocumentExist() -> " + content);// zwraca listę wszystkich dokumentów state 2 i 3
+            Console.WriteLine("GetInfoIfDocumentExist() -> " + content);// zwraca listę wszystkich dokumentów _stateForProcess 2 i 3
             return Execute<List<DocumentList>>(request);
         }//GetInfoIfDocumentExist
 
@@ -952,7 +998,7 @@ id ostatniego wgranego dokumentu 8185910*/
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
-            request.Resource = "document/mode/all";
+            request.Resource = "document/mode/search";
             request.AddHeader("token", _tokenS.ToString());
             request.AddHeader("company_id", _idUser.ToString());
 
@@ -963,35 +1009,16 @@ id ostatniego wgranego dokumentu 8185910*/
             var content = restResponse.Content;
             var JsonArrayString = content;
             JArray jArray = JArray.Parse(JsonArrayString);
-            dynamic data = JObject.Parse(jArray[0].ToString()); // 
+            dynamic data = JObject.Parse(jArray[0].ToString());  
             int dlugosc = data.all_count;
-            //company_id 7085933 data.id -> 8185904
-            Console.WriteLine("kontraktor.id " + data.contractor.id + "data.id -> " + data.id); //pierwszy z listy
-            _idDocument = data.id;
-            _idContractor = data.contractor.id;
-            _idUser = data.company_id;
-            _nameContractor = data.contractor.name;
-            Console.WriteLine("nazwa kontraktor-> " + data.contractor.name);
-            Console.WriteLine("data-> " + data.contractor.name);
-            Console.WriteLine("uploaded_date" + data.uploaded_date);
-
-            dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString()); // 
-
-            Console.WriteLine("kontraktor.id " + data1.contractor.id + "data.id -> " + data1.id); //pierwszy z listy
+            
+            dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString()); 
+                        
+            _stateDoc = data1.state;
             _idDocument = data1.id;
-            _idContractor = data1.contractor.id;
-            _idUser = data1.company_id;
-            _nameContractor = data1.contractor.name;
-            Console.WriteLine("nazwa kontraktor-> " + data1.contractor.name);
-            Console.WriteLine("data-> " + data1.contractor.name);
-            Console.WriteLine("uploaded_date" + data1.uploaded_date);
-
-            //kontraktor.id 9969821data.id -> 8185917
-            //nazwa kontraktor-> GRUPA MARCOVA POLSKA OFFICE SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ SPÓŁKA KOMANDYTOWA
-
-
-            /*kontraktor.id 9969820data.id -> 8185908
-nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
+            Console.WriteLine("jsonArray status "+ _stateDoc + " dla dokumentu "+_idDocument);
+            
+            
 
             request.AddQueryParameter("id", id.ToString());
             request.AddQueryParameter("statusExp", _statusDoc.ToString());
@@ -2064,7 +2091,7 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             return Execute<DocumentOneXt>(request);
         }//FillPositionFromDocToXml(int id)
         #endregion
-        
+
         /// <summary>
         /// Tworzy strukturę xml.
         /// </summary>
@@ -2273,20 +2300,19 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             var JsonArrayString = content;
             dynamic data = JObject.Parse(JsonArrayString);
 
-            _documentName = (data["name"]);
+            _documentName = (data[@"name"]);
+            _stateForProcess = (data[@"state"]);////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
 
-            ////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            int state = (data["state"]);
-            if (state == 0) { Console.WriteLine("Dokument " + _documentName + " został dodany (0)"); }
-            else if (state == 1)
+            if (_stateForProcess == 0) { Console.WriteLine("Dokument " + _documentName + " został dodany (0)"); }
+            else if (_stateForProcess == 1)
             {
                 Console.WriteLine("Dokument " + _documentName + "  w przetworzeniu (1)");
             }
-            else if (state == 2)
+            else if (_stateForProcess == 2)
             {
                 Console.WriteLine("Dokument " + _documentName + "  poprawnie zweryfikowany (2)");
             }
-            else if (state == 3)
+            else if (_stateForProcess == 3)
             {
                 Console.WriteLine("Dokument  " + _documentName + " do weryfikacji (3).");
                 //dane faktury
@@ -2308,8 +2334,8 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
                     }
                 }
             }
-            _stateDoc = state;
-            Console.WriteLine("_stateDoc => " + _stateDoc);
+            _stateDoc = _stateForProcess;
+            Console.WriteLine("stateDoc => " + _stateDoc);
 
             //Console.WriteLine(" GetVeryficationStateByIdDoc(int id) " + content);
             return Execute<DocumentOneXt>(request);
@@ -2432,11 +2458,11 @@ nazwa kontraktor-> "PRETOR" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ*/
             //else { Console.WriteLine("Dokument zweryfikowany (2)"); }
 
             ////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-            //int state = (data["state"]);
-            //if (state == 0) { Console.WriteLine("Dokument został dodany (0)"); }
-            //else if (state == 1) { Console.WriteLine("Dokument w przetworzeniu (1)"); }
-            //else if (state == 2) { Console.WriteLine("Dokument zweryfikowany (2)"); }
-            //else if (state == 3)
+            //int _stateForProcess = (data["_stateForProcess"]);
+            //if (_stateForProcess == 0) { Console.WriteLine("Dokument został dodany (0)"); }
+            //else if (_stateForProcess == 1) { Console.WriteLine("Dokument w przetworzeniu (1)"); }
+            //else if (_stateForProcess == 2) { Console.WriteLine("Dokument zweryfikowany (2)"); }
+            //else if (_stateForProcess == 3)
             //{
             //    Console.WriteLine("Dokument do weryfikacji (3)");
 
