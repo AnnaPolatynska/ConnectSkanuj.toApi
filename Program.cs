@@ -131,64 +131,66 @@ namespace nsTEST_Skanuj_to
             catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
             Console.WriteLine(" ");
 
-            //Wrzuca pliki z podanej lokalizacji do API
+            ////Wrzuca pliki z podanej lokalizacji do API
 
-            //if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
+            ////if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
+            ////{
+            ////    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
+            ////}
+            //System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
+            //string endFileName = System.IO.Directory.GetCurrentDirectory();
+            //Console.WriteLine(endFileName);
+            //string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
+            //foreach (string s in files)
             //{
-            //    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
-            //}
-            System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
-            string endFileName = System.IO.Directory.GetCurrentDirectory();
-            Console.WriteLine(endFileName);
-            string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
-            foreach (string s in files)
-            {
-                System.IO.FileInfo fi = null;
-                try
-                {
-                    fi = new System.IO.FileInfo(s);
-                }
-                catch (System.IO.FileNotFoundException e)
-                {
-                    Console.WriteLine(e.Message);
-                    continue;
-                }
-                Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-                //Wgranie dokumentu do Api - dane do MSSerwer.
-                try
-                {
-                    _fileName = fi.Name.ToString();
-                    _path = fi.Directory.ToString() + "/" + _fileName;
-                    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
-                    Console.WriteLine("C --->>>>> _idDocument " + _idDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
-                        "  _2DB_user_id " + _2DB_user_id);
+            //    System.IO.FileInfo fi = null;
+            //    try
+            //    {
+            //        fi = new System.IO.FileInfo(s);
+            //    }
+            //    catch (System.IO.FileNotFoundException e)
+            //    {
+            //        Console.WriteLine(e.Message);
+            //        continue;
+            //    }
+            //    Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+            //    //Wgranie dokumentu do Api - dane do MSSerwer.
+            //    try
+            //    {
+            //        _fileName = fi.Name.ToString();
+            //        _path = fi.Directory.ToString() + "/" + _fileName;
+            //        program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
+            //        Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
+            //            "  _2DB_user_id " + _2DB_user_id);
 
-                    if (_notice == "") //jeżeli plik jest nowy
-                    {
-                        InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-                        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-                        //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Plik " + _documentName + " już istnieje.");
-                    }
-                }//try uploadDocument
-                catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
-                Console.WriteLine(" ");
-            }//foreach
+            //        if (_notice == "") //jeżeli plik jest nowy
+            //        {
+            //            InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+            //            Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id nowego dokumentu " + _newIdDocument + ").");
+            //        }
+            //        else
+            //        {
+            //            Console.WriteLine("Plik " + _documentName + " już istnieje.");
+            //        }
+            //    }//try uploadDocument
+            //    catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ")."); }
+            //    Console.WriteLine(" ");
+            //}//foreach
 
-            UpdateStatusDocInDB(_idDocument);
+            UpdateStatusDocInDB();//aktualizuje status dokumentów w bazie danych
 
-            try
-            {
-                program.GetDataFromDoc(_idDocument); //OK pobiera dane z dokumentu o podanym id
-            }
-            catch { Console.WriteLine("nie istnieje dokument o podanym id " + _idDocument); }
-            Console.WriteLine(" ");
-            program.FillPositionFromDocToXml(_idDocument);//OK wgrywa poszczególne pozycję z fa do xml.
-            Console.WriteLine(" ");
-            program.CreateXML();//OK zapis danych do xml
+            ////generuj xml
+
+           // GenerateXMLFromDoc();
+            ////try
+            ////{
+            ////    program.GetDataFromDoc(_idDocument); //OK pobiera dane z dokumentu o podanym id
+            ////}
+            ////catch { Console.WriteLine("nie istnieje dokument o podanym id " + _idDocument); }
+            ////Console.WriteLine(" ");
+            ////program.FillPositionFromDocToXml(_idDocument);//OK wgrywa poszczególne pozycję z fa do xml.
+            ////Console.WriteLine(" ");
+            ////program.CreateXML();//OK zapis danych do xml
 
 
 
@@ -207,8 +209,8 @@ namespace nsTEST_Skanuj_to
             //try
             //{
 
-            //program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _2DB_validated, _notice)
-            //    Console.WriteLine(  "notice "+_notice);
+            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _2DB_validated, _notice)
+            //    Console.WriteLine("notice " + _notice);
             //    Console.WriteLine("C _idDocument -> " + _idDocument.ToString() + " nazwa " + _documentName.ToString());
 
 
@@ -232,7 +234,7 @@ namespace nsTEST_Skanuj_to
 
             //UpdateStatusAllDocInDB();//OK Odczyt statusu Dokumentu z DB oraz jego aktualizacja w bazie po zmianie w json.
 
-            //int badanyDoc = 8486192;
+            //int badanyDoc = 8492820;
             //Console.WriteLine("Badany doc -> " + badanyDoc);
             //try
             //{
@@ -419,43 +421,43 @@ namespace nsTEST_Skanuj_to
         }//getUserCompany()
         #endregion
 
-        public SkApiResponse ifDocumentExist(int company_id, int document_id)
-        {
-            Program program = new Program();
-            var client = new RestClient("http://app.skanuj.to/api");
+        //public SkApiResponse ifDocumentExist(int company_id, int document_id)
+        //{
+        //    Program program = new Program();
+        //    var client = new RestClient("http://app.skanuj.to/api");
 
-            var request = new RestRequest(Method.POST);
-            request.Resource = "document";
-            request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("id", _idUser.ToString());
+        //    var request = new RestRequest(Method.POST);
+        //    request.Resource = "document";
+        //    request.AddHeader("token", _tokenS.ToString());
+        //    request.AddHeader("id", _idUser.ToString());
 
-            request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
-            request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
-            request.AddParameter("doc_id", document_id, ParameterType.HttpHeader);
-            request.AddParameter("source", "integracja", ParameterType.GetOrPost);
-            request.AddParameter("response_type", "FULL", ParameterType.GetOrPost);
+        //    request.AddParameter("mode", "upload-file", ParameterType.GetOrPost);
+        //    request.AddParameter("company_id", company_id, ParameterType.HttpHeader);
+        //    request.AddParameter("doc_id", document_id, ParameterType.HttpHeader);
+        //    request.AddParameter("source", "integracja", ParameterType.GetOrPost);
+        //    request.AddParameter("response_type", "FULL", ParameterType.GetOrPost);
 
-            IRestResponse restResponse = client.Execute(request);
-            var content = restResponse.Content;
-            var JsonArrayString = content;
+        //    IRestResponse restResponse = client.Execute(request);
+        //    var content = restResponse.Content;
+        //    var JsonArrayString = content;
 
-            dynamic data = JObject.Parse(JsonArrayString);
-            _idDocument = (data["good-uploads"][0]["doc_id"]);
-            _documentName = (data["good-uploads"][0]["name"]);
-            _uploadDate = (data["good-uploads"][0]["uploaded_date"]);
-            _notice = (data["page_info"]["notice"]); //poprawność wgrania
-            int infoState = (data["good-uploads"][0]["state"]);
+        //    dynamic data = JObject.Parse(JsonArrayString);
+        //    _idDocument = (data["good-uploads"][0]["doc_id"]);
+        //    _documentName = (data["good-uploads"][0]["name"]);
+        //    _uploadDate = (data["good-uploads"][0]["uploaded_date"]);
+        //    _notice = (data["page_info"]["notice"]); //poprawność wgrania
+        //    int infoState = (data["good-uploads"][0]["state"]);
 
-            if (infoState == 5)
-            {
-                Console.WriteLine("dokement o id " + _idDocument + " state = 5 Dokument istnieje");// odpowiedz
+        //    if (infoState == 5)
+        //    {
+        //        Console.WriteLine("dokement o id " + _idDocument + " state = 5 Dokument istnieje");// odpowiedz
 
-            }
-            else { Console.WriteLine("dokement o id " + _idDocument + "state = " + infoState); }
+        //    }
+        //    else { Console.WriteLine("dokement o id " + _idDocument + "state = " + infoState); }
 
-            Console.WriteLine(content);// odpowiedz
-            return Execute<SkApiResponse>(request);
-        }//SkApiResponse
+        //    Console.WriteLine(content);// odpowiedz
+        //    return Execute<SkApiResponse>(request);
+        //}//SkApiResponse
 
 
         /// <summary>
@@ -488,16 +490,14 @@ namespace nsTEST_Skanuj_to
             var JsonArrayString = content;
             dynamic data = JObject.Parse(JsonArrayString);
 
-            _idDocument = (data["good-uploads"][0]["doc_id"]);
+            _newIdDocument = (data["good-uploads"][0]["doc_id"]);
             _documentName = (data["good-uploads"][0]["name"]);
             _2DB_state = (data["good-uploads"][0]["state"]);
             _2DB_uploaded_date = (data["good-uploads"][0]["uploaded_date"]);
             _2DB_user_id = (data["good-uploads"][0]["user_id"]);
             _notice = (data["page_info"]["notice"]); //poprawność wgrania
 
-
-            Console.WriteLine(" uploadDocument --->>>>> _idDocument " + _idDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + "  _2DB_user_id " + _2DB_user_id);
-
+            Console.WriteLine(" uploadDocument --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + "  _2DB_user_id " + _2DB_user_id);
 
             Console.WriteLine("uploadDocument ->" + content);// odpowiedz
             return Execute<SkApiResponse>(request);
@@ -568,14 +568,15 @@ namespace nsTEST_Skanuj_to
             {
                 using (var command = new SqlCommand(sqlInsert, sqlConnection1))
                 {
+                    int idDoc = _newIdDocument;
                     sqlConnection1.Open();
-                    command.Parameters.AddWithValue("@doc_id", value: _idDocument);
+                    command.Parameters.AddWithValue("@doc_id", value: idDoc);
                     command.Parameters.AddWithValue("@name", value: _documentName);
                     command.Parameters.AddWithValue("@state", value: _2DB_state);
                     command.Parameters.AddWithValue("@uploaded_date", value: _2DB_uploaded_date);
                     command.Parameters.AddWithValue("@user_id", value: _2DB_user_id);
 
-                    Console.WriteLine("InsertIntoDB() --->>>>> _idDocument " + _idDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
+                    Console.WriteLine("InsertIntoDB() --->>>>>  _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
                         "  _2DB_user_id " + _2DB_user_id);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
@@ -585,7 +586,7 @@ namespace nsTEST_Skanuj_to
         }//InsertIntoDB()
 
 
-        public static void UpdateStatusDocInDB(int id_doc)
+        public static void UpdateStatusDocInDB()
         {
             Program program = new Program();
 
@@ -602,8 +603,6 @@ namespace nsTEST_Skanuj_to
             {
                 _stateDocInDB = int.Parse((dataRow[@"state"].ToString()));
                 _idDocInDB = int.Parse(dataRow["doc_id"].ToString());
-
-
                 if (_stateDocInDB == 0)
                 {
                     //idDOC = int.Parse(dataRow["doc_id"].ToString());
@@ -644,7 +643,7 @@ namespace nsTEST_Skanuj_to
                 {
                     Console.WriteLine("Procesy rożnią się. Id dokumentu z bazy " + _idDocInDB + "_stateDoc " + _stateDoc + " _stateDocInDB " + _stateDocInDB);
                     UpdateDB(_idDocInDB);
-                    Console.WriteLine("Z aktualizowano statusy w bazie dla dokumentu " + _idDocInDB);
+                    Console.WriteLine("Zaktualizowano statusy w bazie dla dokumentu " + _idDocInDB);
                 }
                 else
                 {
@@ -658,10 +657,8 @@ namespace nsTEST_Skanuj_to
 
 
 
-        /// <summary>
-        /// Porównuje i aktualizuje z jsona statusy dokumentów w bazie danych. 
-        /// </summary>
-        public static void UpdateStatusAllDocInDB()
+
+        public static void GenerateXMLFromDoc()
         {
             Program program = new Program();
 
@@ -676,75 +673,39 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                _stateDocInDB = int.Parse((dataRow[@"state"].ToString()));
-                _idDocInDB = int.Parse(dataRow["doc_id"].ToString());
-
-
-                if (_stateDocInDB == 0)
-                {
-                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " dodany ");
-
-                }
-                else if (_stateDocInDB == 1)
-                {
-                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " w przetwarzaniu ");
-                }
-                else if (_stateDocInDB == 2)
-                {
-                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " w zweryfikowany ");
-
-                }
-                else if (_stateDocInDB == 3)
-                {
-                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " do weryfikacji ");
-                }
-                else if (_stateDocInDB == 4)
-                {
-                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + _idDocInDB + " ma status " + _stateDocInDB + " wielostronicowy brak akcji ");
-                }
-                else
-                {
-                    //idDOC = int.Parse(dataRow["doc_id"].ToString());
-                    Console.WriteLine("Dokument " + _idDocInDB + " - problem z ustaleniem statusu " + _stateDocInDB + " ");
-                }
-
+                int idDocum = int.Parse(dataRow["doc_id"].ToString());
+                _documentName = dataRow["name"].ToString();
                 //sprawdzenie z jsona
-                program.GetIdDocumentList(_idDocInDB);
-
-                //var client = new RestClient("http://app.skanuj.to/api");
-                //var request = new RestRequest();
-                //request.Resource = "document/mode/search";
-                //request.AddHeader("token", _tokenS.ToString());
-                //request.AddHeader("company_id", _idUser.ToString());
-                //request.AddParameter("id", _idDocInDB, ParameterType.HttpHeader);
-                //IRestResponse restResponse = client.Execute(request);
-                //var content = restResponse.Content;
-                //var JsonArrayString = content;
-                //JArray jArray = JArray.Parse(JsonArrayString);
-                //dynamic data = JObject.Parse(jArray[0].ToString());
-                //int dlugosc = data.all_count;
-                //dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString());
-                //_stateDoc = data1.state;
-                //Console.WriteLine(" dla dokumentu " + _idDocInDB + " status jsonArray " + _stateDoc);
-                //request.AddQueryParameter("id", _idDocInDB.ToString());
-
-                //program.Execute<List<DocumentList>>(request);
-                // porównanie statusów dla id dokumentu i jego aktualizacja w bazie.
-                if (_stateDocInDB != _stateDoc)
+                try
                 {
-                    Console.WriteLine("Procesy rożnią się. Id dokumentu z bazy " + _idDocInDB + "_stateDoc " + _stateDoc + " _stateDocInDB " + _stateDocInDB);
-                    UpdateDB(_idDocInDB);
-                    Console.WriteLine("Z aktualizowano statusy w bazie dla dokumentu " + _idDocInDB);
+                    program.GetIdDocumentList(idDocum);
                 }
-                else
+                catch { Console.WriteLine("GetIdDocumentList -> problem z dokumentem o id " + idDocum); }
+                Console.WriteLine(" ");
+                try
                 {
-                    Console.WriteLine("procesy zgodne -> _stateDoc " + _stateDoc + " _stateDocInDB " + _stateDocInDB);
+                    program.GetDataFromDoc(idDocum); //OK pobiera dane z dokumentu o podanym id
                 }
+                catch { Console.WriteLine("GetDataFromDoc -> nie istnieje dokument o podanym id " + idDocum); }
+                Console.WriteLine(" ");
+                try
+                {
+                    program.FillPositionFromDocToXml(idDocum);//OK wgrywa poszczególne pozycję z fa do xml.
+                }
+                catch { Console.WriteLine("FillPositionFromDocToXml(idDocum) problem z dok "+ idDocum); }
+                Console.WriteLine(" ");
+                try
+                {
+                    program.CreateXML();//OK zapis danych do xml
+                }
+                catch { Console.WriteLine("CreateXML() -> Problem z dok " + idDocum); }
+
+                _idDocument = idDocum;
+                Console.WriteLine(" _idDocument " + _idDocument);
+               
+              
+
+
             }// foreach
 
             sqlConnection.Close();
@@ -756,14 +717,14 @@ namespace nsTEST_Skanuj_to
         /// </summary>
         /// <param name="id">id dokumentu</param>
         /// <returns></returns>
-        public List<DocumentList> GetIdDocumentList(int id)
+        public List<DocumentList> GetIdDocumentList(int idDoc)
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
-            request.Resource = "document/mode/search";
+            request.Resource = "document/mode/serch";
             request.AddHeader("token", _tokenS.ToString());
             request.AddHeader("company_id", _idUser.ToString());
-            request.AddParameter("id", _idDocInDB, ParameterType.HttpHeader);
+            request.AddParameter("id", idDoc, ParameterType.HttpHeader);
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
             var JsonArrayString = content;
@@ -772,10 +733,10 @@ namespace nsTEST_Skanuj_to
             int dlugosc = data.all_count;
             dynamic data1 = JObject.Parse(jArray[dlugosc - 1].ToString());
             _stateDoc = data1.state;
-            Console.WriteLine(" dla dokumentu " + _idDocInDB + " status jsonArray " + _stateDoc);
-            request.AddQueryParameter("id", _idDocInDB.ToString());
+            Console.WriteLine(" dla dokumentu " + idDoc + " status jsonArray " + _stateDoc);
+            request.AddQueryParameter("id", idDoc.ToString());
 
-            //Console.WriteLine("GetIdDocumentList -> " + content);// odpowiedz
+            Console.WriteLine("GetIdDocumentList -> " + content);// odpowiedz
 
             return Execute<List<DocumentList>>(request);
         }//GetExportedDocumentList
@@ -1352,7 +1313,7 @@ id ostatniego wgranego dokumentu 8185910*/
         /// </summary>
         /// <param name="name"></param>
         /// <returns>dane dokumentu z okresleniem poprawności rozpoznania poszczególnych pozycji.</returns>
-        public DocumentOneXt GetDataFromDoc(int id) // // // // ok
+        public DocumentOneXt GetDataFromDoc(int idDoc) // // // // ok
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
@@ -1361,7 +1322,7 @@ id ostatniego wgranego dokumentu 8185910*/
             request.AddHeader("company_id", _idUser.ToString());
 
             request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
-            request.AddParameter("id", id, ParameterType.GetOrPost);
+            request.AddParameter("id", idDoc, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
@@ -2045,7 +2006,7 @@ id ostatniego wgranego dokumentu 8185910*/
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public DocumentOneXt FillPositionFromDocToXml(int id) // // // // ok
+        public DocumentOneXt FillPositionFromDocToXml(int idDoc) // // // // ok
         {
             var client = new RestClient("http://app.skanuj.to/api");
             var request = new RestRequest();
@@ -2054,13 +2015,14 @@ id ostatniego wgranego dokumentu 8185910*/
             request.AddHeader("company_id", _idUser.ToString());
 
             request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
-            request.AddParameter("id", id, ParameterType.GetOrPost);
+            request.AddParameter("id", idDoc, ParameterType.GetOrPost);
 
             IRestResponse restResponse = client.Execute(request);
             var content = restResponse.Content;
             var JsonArrayString = content;
             dynamic data = JObject.Parse(JsonArrayString);
-            _documentName = (data["name"]);
+           _documentName = (data["name"]);
+
             //pobranie rozpoznanych wartości dokumentu. 
             //List<PozycjaXml> _listaPozycji = new List<PozycjaXml>();
             //dane szczegółowe faktury
