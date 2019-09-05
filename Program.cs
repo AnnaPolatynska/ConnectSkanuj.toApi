@@ -39,11 +39,12 @@ namespace nsTEST_Skanuj_to
         public static int _J_for_process; // jeżeli 1 = do wygenerowania, 0 = wygenerowano xml
         public static string _J_uploadDate;// Data wgrania dokumentu
         public static int _J_user_id;
+        public static int _J_count_pages; // licznik stron
 
         public static int _newIdDocument; // id nowo wgranego dokumentu
 
         public static string _documentName; //nazwa wgranego dokumentu
-        
+
         public static string _notice;
 
         //user
@@ -145,85 +146,90 @@ namespace nsTEST_Skanuj_to
 
             ////Wrzuca pliki z podanej lokalizacji do API
             #region plikiDoAPI
-            ////if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
-            ////{
-            ////    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
-            ////}
-            //System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
-            //string endFileName = System.IO.Directory.GetCurrentDirectory();
-            //Console.WriteLine(endFileName);
-            //string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
-            //foreach (string s in files)
+            //if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
             //{
-            //    System.IO.FileInfo fi = null;
-            //    try
-            //    {
-            //        fi = new System.IO.FileInfo(s);
-            //    }
-            //    catch (System.IO.FileNotFoundException e)
-            //    {
-            //        Console.WriteLine(e.Message);
-            //        continue;
-            //    }
-            //    Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-            //    //Wgranie dokumentu do Api - dane do MSSerwer.
-            //    //try
-            //    //{
-            //    _fileName = fi.Name.ToString();
-            //    _path = fi.Directory.ToString() + "/" + _fileName;
-            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
-            //    Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
-            //        "  _2DB_user_id " + _2DB_user_id);
+            //    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
+            //}
+            System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
+            string endFileName = System.IO.Directory.GetCurrentDirectory();
+            Console.WriteLine(endFileName);
+            string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
+            foreach (string s in files)
+            {
+                System.IO.FileInfo fi = null;
+                try
+                {
+                    fi = new System.IO.FileInfo(s);
+                }
+                catch (System.IO.FileNotFoundException e)
+                {
+                    Console.WriteLine(e.Message);
+                    continue;
+                }
+                Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+                //Wgranie dokumentu do Api - dane do MSSerwer.
+                //try
+                //{
+                _fileName = fi.Name.ToString();
+                _path = fi.Directory.ToString() + "/" + _fileName;
+                program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
+               // Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
+                //    "  _2DB_user_id " + _2DB_user_id);
 
-            //    if (_notice == "") //jeżeli plik jest nowy
-            //    {
-            //        //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-            //        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id nowego dokumentu " + _newIdDocument + ").");
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine("Plik " + _documentName + " już istnieje.");
-            //    }
-            //    //}//try uploadDocument
-            //    //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ")."); }
-            //    Console.WriteLine(" ");
-            //}//foreach
+                //if (_notice == "") //jeżeli plik jest nowy
+                //{
+                //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+                //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id nowego dokumentu " + _newIdDocument + ").");
+                //}
+                //else
+                //{
+                //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
+                //}
+                //}//try uploadDocument
+                //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ")."); }
+                Console.WriteLine(" ");
+            }//foreach
             #endregion
 
+            //ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
+            program.GetDocumentList();
+
+            //OK Generuje xml
+            GenerateXMLFromDoc();
+          
+
+
+
+
+
+
+
+            //LAB 
+            
+            //try
+            //{
+            //    program.GetDataFromDoc(_idDocument); //OK pobiera dane z dokumentu o podanym id
+            //}
+            //catch { Console.WriteLine("nie istnieje dokument o podanym id " + _idDocument); }
+            //Console.WriteLine(" ");
+            //program.FillPositionFromDocToXml(_idDocument);//OK wgrywa poszczególne pozycję z fa do xml.
+            //Console.WriteLine(" ");
+            //program.CreateXML();//OK zapis danych do xml
+
+            //sprawdzenie z jsona
             //program.GetVeryficationStateByIdDoc(8185917);
             //program.GetStatusDocumentList(8185917);
             //program.GetInfoFromDocumentList(8185917);
 
-
-            //sprawdzenie z jsona
-            program.GetDocumentList();
-
             //program.GetInfoDocumentList(_2DB_name);
-
-
 
             // UpdateStatusDocInDB();//OK Aktualizuje status dokumentów w bazie danych
             // UpdateInfoDocInDB(); //aktualizuje id, parent id liczbę stron
 
-
-            ////OK Generuje xml
-            // GenerateXMLFromDoc();
-            ////try
-            ////{
-            ////    program.GetDataFromDoc(_idDocument); //OK pobiera dane z dokumentu o podanym id
-            ////}
-            ////catch { Console.WriteLine("nie istnieje dokument o podanym id " + _idDocument); }
-            ////Console.WriteLine(" ");
-            ////program.FillPositionFromDocToXml(_idDocument);//OK wgrywa poszczególne pozycję z fa do xml.
-            ////Console.WriteLine(" ");
-            ////program.CreateXML();//OK zapis danych do xml
-
-
-            //LAB
             //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
             //program.GetDataFromDoc(8497350); //ok pobiera rozpoznane dane ze wskazanego dokumentu
             //program.GetIdParentIdFromDoc(8498032);//8492054 //8498023 //OK Pobiera dla dokumentów wielostronicowych dane id_dokumentu i parent_doc_id 
-            Console.WriteLine(" ");
+            //Console.WriteLine(" ");
             //program.GetAllDocumentList(8498023); //!!! Zwraca ostaniego z listy
 
             //if (pages != 1)
@@ -752,7 +758,7 @@ namespace nsTEST_Skanuj_to
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process);");
+            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process, count_pages) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process, @count_pages);");
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
                 using (var command = new SqlCommand(sqlInsert, sqlConnection1))
@@ -766,6 +772,7 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("parent_doc_id", _J_parent_doc_id);
                     command.Parameters.AddWithValue("pages", _J_pages);
                     command.Parameters.AddWithValue("for_process", _J_for_process);
+                    command.Parameters.AddWithValue("count_pages", _J_count_pages);
                     Console.WriteLine("InsertIntoDB() --->>>>>  " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
@@ -846,7 +853,40 @@ namespace nsTEST_Skanuj_to
             sqlConnection.Close();
         }//UpdateInfoDocInDB()
 
+        public static void CountPages(int idDoc)
+        {
+            Program program = new Program();
 
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            // "_stateForProcess": 1, /* 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("select a.*, 1+isnull(a.total,0) as [start], isnull(a.total,0) + a.pages as [end] from (SELECT TOP (1000)[name],[doc_id],[parent_doc_id],[pages], total = (select sum(pages) from [WgraneDoc] where parent_doc_id=p.[parent_doc_id] and [doc_id]<p.[doc_id]) FROM [skanujTo].[dbo].[WgraneDoc] p where parent_doc_id <> 0 order by doc_id asc) a;", sqlConnection);
+
+            //SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT CASE When COUNT(*)=1 then 1 Else sum(WgraneDoc.pages) end AS 'licz' FROM WgraneDoc WHERE parent_doc_id = " + _J_parent_doc_id +";", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                _2DB_doc_id = int.Parse(dataRow["doc_id"].ToString());
+                _2DB_name = dataRow["name"].ToString();
+                _2DB_pages = int.Parse((dataRow[@"pages"].ToString()));
+                _2DB_parent_doc_id = int.Parse((dataRow[@"parent_doc_id"].ToString()));
+                //_J_count_pages = 
+               // Console.WriteLine("w DB Dokument " + _2DB_name + " ma " + _2DB_pages + " stron ");
+
+                //sprawdzenie z jsona
+               // program.GetInfoDocumentList(_2DB_name);
+
+            }// foreach
+            sqlConnection.Close();
+        }//CountPages()
+
+        /// <summary>
+        /// Generuje xml z dokumentów w DB
+        /// </summary>
         public static void GenerateXMLFromDoc()
         {
             Program program = new Program();
@@ -864,7 +904,9 @@ namespace nsTEST_Skanuj_to
             {
                 int idDocum = int.Parse(dataRow["doc_id"].ToString());
                 _documentName = dataRow["name"].ToString();
-
+                _J_parent_doc_id = int.Parse(dataRow["parent_doc_id"].ToString());
+                _J_pages = int.Parse(dataRow["pages"].ToString());
+                                
                 try
                 {
                     program.GetDataFromDoc(idDocum); //OK pobiera dane z dokumentu o podanym id
@@ -885,9 +927,6 @@ namespace nsTEST_Skanuj_to
 
                 _idDocument = idDocum;
                 Console.WriteLine(" _idDocument " + _idDocument);
-
-
-
 
             }// foreach
 
@@ -1071,8 +1110,9 @@ namespace nsTEST_Skanuj_to
                 _J_pages = data1.pages;
                 _J_for_process = 1;
                 _J_user_id = data1.user_id;
-               
-                Console.WriteLine("DANE Z JSON -> " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate +" user " + _J_user_id);
+                _J_count_pages = 1;
+
+                Console.WriteLine("DANE Z JSON -> " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                 // jeżeli _J_parent_doc_id jest NULLem wstaw 0
                 int? jparent_doc_id = (data1.parent_doc_id);
                 int b = jparent_doc_id ?? 0;
@@ -1084,9 +1124,9 @@ namespace nsTEST_Skanuj_to
                 {
                     _J_parent_doc_id = 0;
                 }
-                                              
+                      
                 InsertAllIntoDB(); //OK Wgrywa wszystko z jsona.
-                
+
             }//for
 
             //Console.WriteLine("GetInfoDocumentList search-> " + content);// odpowiedz
@@ -2624,7 +2664,9 @@ id ostatniego wgranego dokumentu 8185910*/
                 ))));
 
             //string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
-            string nazwa = _documentName.ToString().Replace('/', '_');
+            string longnazwa = _documentName.ToString().Replace('/', '_');
+            string nazwa = longnazwa.Substring(0, longnazwa.Length-4);
+
             string filename = nazwa + "_" + _idDocument + ".txt";
 
             //string path = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
@@ -2661,11 +2703,14 @@ id ostatniego wgranego dokumentu 8185910*/
                 {
                     xml.Save(filename);
                     WriteToFile("Zaktualizowano plik " + filename + " " + DateTime.Now);
+                    //odhaczenie pliku, z którego wygenerowano xml => czy wykasować plik z API
+
+                    _J_for_process = 0;
                 }
                 catch
                 { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
             }
-
+            
         }//CreateXML(string filename)
 
 
