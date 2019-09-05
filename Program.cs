@@ -119,6 +119,42 @@ namespace nsTEST_Skanuj_to
         public static string _VatWalutaPodstawowa;
         public static string _Waluta;
         public static string _Zaplacono;
+
+        public static string _rBruttoWalutaPodstawowa;
+        public static string _rCategoryDesc;
+        public static string _rCzyNieKompletnaPozycja;
+        public static string _rDataSprzedazy;
+        public static string _rDataWplywu;
+        public static string _rDataWystawienia;
+        public static string _rFakturaKorygowana;
+        public static string _rKategoria;
+        public static string _rKategoriaId;
+        public static string _rKontoBankowe;
+        public static string _rKorygujaca;
+        public static string _rKursWaluty;
+        public static string _rMiesiacKsiegowy;
+        public static string _rNabywcaAdres;
+        public static string _rNabywcaKod;
+        public static string _rNabywcaMiejscowosc;
+        public static string _rNabywcaNazwa;
+        public static string _rNabywcaNip;
+        public static string _rNettoWalutaPodstawowa;
+        public static string _rNrFaktury;
+        public static string _rNrZamowienia;
+        public static string _rPrzyczynaKorekty;
+        public static string _rRazemBrutto;
+        public static string _rRazemNetto;
+        public static string _rRazemVAT;
+        public static string _rSposobPlatnosci;
+        public static string _rSprzedawcaAdres;
+        public static string _rSprzedawcaKod;
+        public static string _rSprzedawcaMiejscowosc;
+        public static string _rSprzedawcaNazwa;
+        public static string _rSprzedawcaNip;
+        public static string _rTerminPlatnosci;
+        public static string _rVatWalutaPodstawowa;
+        public static string _rWaluta;
+        public static string _rZaplacono;
         List<PozycjaXml> _listaPozycji = new List<PozycjaXml>(); //lista pozycji wyszczególnionych na fa.
         #endregion
 
@@ -146,53 +182,53 @@ namespace nsTEST_Skanuj_to
 
             ////Wrzuca pliki z podanej lokalizacji do API
             #region plikiDoAPI
-            //if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
+            ////if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
+            ////{
+            ////    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
+            ////}
+            //System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
+            //string endFileName = System.IO.Directory.GetCurrentDirectory();
+            //Console.WriteLine(endFileName);
+            //string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
+            //foreach (string s in files)
             //{
-            //    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
-            //}
-            System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
-            string endFileName = System.IO.Directory.GetCurrentDirectory();
-            Console.WriteLine(endFileName);
-            string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
-            foreach (string s in files)
-            {
-                System.IO.FileInfo fi = null;
-                try
-                {
-                    fi = new System.IO.FileInfo(s);
-                }
-                catch (System.IO.FileNotFoundException e)
-                {
-                    Console.WriteLine(e.Message);
-                    continue;
-                }
-                Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-                //Wgranie dokumentu do Api - dane do MSSerwer.
-                //try
-                //{
-                _fileName = fi.Name.ToString();
-                _path = fi.Directory.ToString() + "/" + _fileName;
-                program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
-               // Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
-                //    "  _2DB_user_id " + _2DB_user_id);
+            //    System.IO.FileInfo fi = null;
+            //    try
+            //    {
+            //        fi = new System.IO.FileInfo(s);
+            //    }
+            //    catch (System.IO.FileNotFoundException e)
+            //    {
+            //        Console.WriteLine(e.Message);
+            //        continue;
+            //    }
+            //    Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+            //    //Wgranie dokumentu do Api - dane do MSSerwer.
+            //    //try
+            //    //{
+            //    _fileName = fi.Name.ToString();
+            //    _path = fi.Directory.ToString() + "/" + _fileName;
+            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
+            //   // Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
+            //    //    "  _2DB_user_id " + _2DB_user_id);
 
-                //if (_notice == "") //jeżeli plik jest nowy
-                //{
-                //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-                //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id nowego dokumentu " + _newIdDocument + ").");
-                //}
-                //else
-                //{
-                //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
-                //}
-                //}//try uploadDocument
-                //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ")."); }
-                Console.WriteLine(" ");
-            }//foreach
+            //    //if (_notice == "") //jeżeli plik jest nowy
+            //    //{
+            //    //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+            //    //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id nowego dokumentu " + _newIdDocument + ").");
+            //    //}
+            //    //else
+            //    //{
+            //    //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
+            //    //}
+            //    //}//try uploadDocument
+            //    //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ")."); }
+            //    Console.WriteLine(" ");
+            //}//foreach
             #endregion
 
             //ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
-            program.GetDocumentList();
+            //program.GetDocumentList();
 
             //OK Generuje xml
             GenerateXMLFromDoc();
@@ -1856,6 +1892,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA = data["attributes"]["BruttoWalutaPodstawowa"]["status"];
                 string value = (data["attributes"]["BruttoWalutaPodstawowa"]["value"]);
                 _BruttoWalutaPodstawowa = value;
+                _rBruttoWalutaPodstawowa = rozp;
                 string atr = "Brutto Waluta Podstawowa ";
 
                 if (statusA == 1)
@@ -1871,10 +1908,12 @@ id ostatniego wgranego dokumentu 8185910*/
             catch { };
             try
             {
+                
                 string rozp1 = (data["attributes"]["CategoryDesc"]["is_valid"]).ToString();
                 int statusA1 = data["attributes"]["CategoryDesc"]["status"];
                 string value1 = (data["attributes"]["CategoryDesc"]["value"]);
                 _CategoryDesc = value1;
+                _rCategoryDesc = rozp1;
                 string atr1 = "CategoryDesc ";
                 if (statusA1 == 1)
                 {
@@ -1893,6 +1932,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA2 = data["attributes"]["CzyNieKompletnaPozycja"]["status"];
                 string value2 = (data["attributes"]["CzyNieKompletnaPozycja"]["value"]);
                 _CzyNieKompletnaPozycja = value2;
+                _rCzyNieKompletnaPozycja = rozp2;
                 string atr2 = "CzyNieKompletnaPozycja ";
                 if (statusA2 == 1)
                 {
@@ -1911,6 +1951,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA3 = data["attributes"]["DataSprzedazy"]["status"];
                 string value3 = (data["attributes"]["DataSprzedazy"]["value"]);
                 _DataSprzedazy = value3;
+                _rDataSprzedazy = rozp3;
                 string atr3 = "DataSprzedazy ";
                 if (statusA3 == 1)
                 {
@@ -1929,6 +1970,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA4 = data["attributes"]["DataWplywu"]["status"];
                 string value4 = (data["attributes"]["DataWplywu"]["value"]);
                 _DataWplywu = value4;
+                _rDataWplywu = rozp4;
                 string atr4 = "DataWplywu ";
                 if (statusA4 == 1)
                 {
@@ -1948,6 +1990,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA6 = data["attributes"]["DataWystawienia"]["status"];
                 string value6 = (data["attributes"]["DataWystawienia"]["value"]);
                 _DataWystawienia = value6;
+                _rDataWystawienia = rozp6;
                 string atr6 = "DataWystawienia ";
                 if (statusA6 == 1)
                 {
@@ -1966,6 +2009,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA7 = data["attributes"]["FakturaKorygowana"]["status"];
                 string value7 = (data["attributes"]["FakturaKorygowana"]["value"]);
                 _FakturaKorygowana = value7;
+                _rFakturaKorygowana = rozp7;
                 string atr7 = "FakturaKorygowana ";
                 if (statusA7 == 1)
                 {
@@ -1984,6 +2028,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA8 = data["attributes"]["Kategoria"]["status"];
                 string value8 = (data["attributes"]["Kategoria"]["value"]);
                 _Kategoria = value8;
+                _rKategoria = rozp8;
                 string atr8 = "Kategoria ";
                 if (statusA8 == 1)
                 {
@@ -2003,6 +2048,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA5 = data["attributes"]["KategoriaId"]["status"];
                 string value5 = (data["attributes"]["KategoriaId"]["value"]);
                 _KategoriaId = value5;
+                _rKategoriaId = rozp5;
                 string atr5 = "KategoriaId ";
                 if (statusA5 == 1)
                 {
@@ -2021,6 +2067,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA9 = data["attributes"]["KontoBankowe"]["status"];
                 string value9 = (data["attributes"]["KontoBankowe"]["value"]);
                 _KontoBankowe = value9;
+                _rKontoBankowe = rozp9;
                 string atr9 = "KontoBankowe ";
                 if (statusA9 == 1)
                 {
@@ -2040,6 +2087,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA10 = data["attributes"]["Korygujaca"]["status"];
                 string value10 = (data["attributes"]["Korygujaca"]["value"]);
                 _Korygujaca = value10;
+                _rKorygujaca = rozp10;
                 string atr10 = "Korygujaca ";
                 if (statusA10 == 1)
                 {
@@ -2059,6 +2107,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA11 = data["attributes"]["KursWaluty"]["status"];
                 string value11 = (data["attributes"]["KursWaluty"]["value"]);
                 _KursWaluty = value11;
+                _rKursWaluty = rozp11;
                 string atr11 = "KursWaluty ";
                 if (statusA11 == 1)
                 {
@@ -2078,6 +2127,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA12 = data["attributes"]["MiesiacKsiegowy"]["status"];
                 string value12 = (data["attributes"]["MiesiacKsiegowy"]["value"]);
                 _MiesiacKsiegowy = value12;
+                _rMiesiacKsiegowy = rozp12;
                 string atr12 = "MiesiacKsiegowy ";
                 if (statusA12 == 1)
                 {
@@ -2097,6 +2147,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA13 = data["attributes"]["NabywcaAdres"]["status"];
                 string value13 = (data["attributes"]["NabywcaAdres"]["value"]);
                 _NabywcaAdres = value13;
+                _rNabywcaAdres = rozp13;
                 string atr13 = "NabywcaAdres ";
                 if (statusA13 == 1)
                 {
@@ -2115,6 +2166,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA14 = data["attributes"]["NabywcaKod"]["status"];
                 string value14 = (data["attributes"]["NabywcaKod"]["value"]);
                 _NabywcaKod = value14;
+                _rNabywcaKod = rozp14;
                 string atr14 = "NabywcaKod ";
                 if (statusA14 == 1)
                 {
@@ -2134,6 +2186,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA15 = data["attributes"]["NabywcaMiejscowosc"]["status"];
                 string value15 = (data["attributes"]["NabywcaMiejscowosc"]["value"]);
                 _NabywcaMiejscowosc = value15;
+                _rNabywcaMiejscowosc = rozp15;
                 string atr15 = "NabywcaMiejscowosc ";
                 if (statusA15 == 1)
                 {
@@ -2153,6 +2206,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA16 = data["attributes"]["NabywcaNazwa"]["status"];
                 string value16 = (data["attributes"]["NabywcaNazwa"]["value"]);
                 _NabywcaNazwa = value16;
+                _rNabywcaNazwa = rozp16;
                 string atr16 = "NabywcaNazwa ";
                 if (statusA16 == 1)
                 {
@@ -2172,6 +2226,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA17 = data["attributes"]["NabywcaNip"]["status"];
                 string value17 = (data["attributes"]["NabywcaNip"]["value"]);
                 _NabywcaNip = value17;
+                _rNabywcaNip = rozp17;
                 string atr17 = "NabywcaNip ";
                 if (statusA17 == 1)
                 {
@@ -2191,6 +2246,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA18 = data["attributes"]["NettoWalutaPodstawowa"]["status"];
                 string value18 = (data["attributes"]["NettoWalutaPodstawowa"]["value"]);
                 _NettoWalutaPodstawowa = value18;
+                _rNettoWalutaPodstawowa = rozp18;
                 string atr18 = "NettoWalutaPodstawowa ";
                 if (statusA18 == 1)
                 {
@@ -2210,6 +2266,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA19 = data["attributes"]["NrFaktury"]["status"];
                 string value19 = (data["attributes"]["NrFaktury"]["value"]);
                 _NrFaktury = value19;
+                _rNrFaktury = rozp19;
                 string atr19 = "NrFaktury ";
                 if (statusA19 == 1)
                 {
@@ -2229,6 +2286,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA20 = data["attributes"]["NrZamowienia"]["status"];
                 string value20 = (data["attributes"]["NrZamowienia"]["value"]);
                 _NrZamowienia = value20;
+                _rNrZamowienia = rozp20;
                 string atr20 = "NrZamowienia ";
                 if (statusA20 == 1)
                 {
@@ -2248,6 +2306,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA21 = data["attributes"]["PrzyczynaKorekty"]["status"];
                 string value21 = (data["attributes"]["PrzyczynaKorekty"]["value"]);
                 _PrzyczynaKorekty = value21;
+                _rPrzyczynaKorekty = rozp21;
                 string atr21 = "PrzyczynaKorekty ";
                 if (statusA21 == 1)
                 {
@@ -2268,6 +2327,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA22 = data["attributes"]["RazemBrutto"]["status"];
                 string value22 = (data["attributes"]["RazemBrutto"]["value"]);
                 _RazemBrutto = value22;
+                _rRazemBrutto = rozp22;
                 string atr22 = "RazemBrutto";
                 if (statusA22 == 1)
                 {
@@ -2287,6 +2347,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA23 = data["attributes"]["RazemNetto"]["status"];
                 string value23 = (data["attributes"]["RazemNetto"]["value"]);
                 _RazemNetto = value23;
+                _rRazemNetto = rozp23;
                 string atr23 = "RazemNetto";
                 if (statusA23 == 1)
                 {
@@ -2307,6 +2368,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA24 = data["attributes"]["RazemVAT"]["status"];
                 string value24 = (data["attributes"]["RazemVAT"]["value"]);
                 _RazemVAT = value24;
+                _rRazemVAT = rozp24;
                 string atr24 = "RazemVAT";
                 if (statusA24 == 1)
                 {
@@ -2329,6 +2391,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA25 = data["attributes"]["SposobPlatnosci"]["status"];
                 string value25 = (data["attributes"]["SposobPlatnosci"]["value"]);
                 _SposobPlatnosci = value25;
+                _rSposobPlatnosci = rozp25;
                 string atr25 = "SposobPlatnosci";
                 if (statusA25 == 1)
                 {
@@ -2348,6 +2411,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA26 = data["attributes"]["SprzedawcaAdres"]["status"];
                 string value26 = (data["attributes"]["SprzedawcaAdres"]["value"]);
                 _SprzedawcaAdres = value26;
+                _rSprzedawcaAdres = rozp26;
                 string atr26 = "SprzedawcaAdres";
                 if (statusA26 == 1)
                 {
@@ -2367,6 +2431,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA27 = data["attributes"]["SprzedawcaKod"]["status"];
                 string value27 = (data["attributes"]["SprzedawcaKod"]["value"]);
                 _SprzedawcaKod = value27;
+                _rSprzedawcaKod = rozp27;
                 string atr27 = "SprzedawcaKod";
                 if (statusA27 == 1)
                 {
@@ -2386,6 +2451,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA28 = data["attributes"]["SprzedawcaMiejscowosc"]["status"];
                 string value28 = (data["attributes"]["SprzedawcaMiejscowosc"]["value"]);
                 _SprzedawcaMiejscowosc = value28;
+                _rSprzedawcaMiejscowosc = rozp28;
                 string atr28 = "SprzedawcaMiejscowosc";
                 if (statusA28 == 1)
                 {
@@ -2404,6 +2470,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA29 = data["attributes"]["SprzedawcaNazwa"]["status"];
                 string value29 = (data["attributes"]["SprzedawcaNazwa"]["value"]);
                 _SprzedawcaNazwa = value29;
+                _rSprzedawcaNazwa = rozp29;
                 string atr29 = "SprzedawcaNazwa";
                 if (statusA29 == 1)
                 {
@@ -2422,6 +2489,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA30 = data["attributes"]["SprzedawcaNip"]["status"];
                 string value30 = (data["attributes"]["SprzedawcaNip"]["value"]);
                 _SprzedawcaNip = value30;
+                _rSprzedawcaNip = rozp30;
                 string atr30 = "SprzedawcaNip";
                 if (statusA30 == 1)
                 {
@@ -2440,6 +2508,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA31 = data["attributes"]["TerminPlatnosci"]["status"];
                 string value31 = (data["attributes"]["TerminPlatnosci"]["value"]);
                 _TerminPlatnosci = value31;
+                _rTerminPlatnosci = rozp31;
                 string atr31 = "TerminPlatnosci";
                 if (statusA31 == 1)
                 {
@@ -2458,6 +2527,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA32 = data["attributes"]["VatWalutaPodstawowa"]["status"];
                 string value32 = (data["attributes"]["VatWalutaPodstawowa"]["value"]);
                 _VatWalutaPodstawowa = value32;
+                _rVatWalutaPodstawowa = rozp32;
                 string atr32 = "VatWalutaPodstawowa";
                 if (statusA32 == 1)
                 {
@@ -2476,6 +2546,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA33 = data["attributes"]["Waluta"]["status"];
                 string value33 = (data["attributes"]["Waluta"]["value"]);
                 _Waluta = value33;
+                _rWaluta = rozp33;
                 string atr33 = "Waluta";
                 if (statusA33 == 1)
                 {
@@ -2494,6 +2565,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 int statusA34 = data["attributes"]["Zaplacono"]["status"];
                 string value34 = (data["attributes"]["Zaplacono"]["value"]);
                 _Zaplacono = value34;
+                _rZaplacono = rozp34;
                 string atr34 = "Zaplacono";
                 if (statusA34 == 1)
                 {
@@ -2555,6 +2627,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 double netto = val["Netto"];
                 int stawkaVAT = val["StawkaVAT"];
                 double vAT = val["VAT"];
+                int validation = val["is_valid"]; // pobiera validation 
 
                 var pozycja = new nsXml.PozycjaXml();
                 pozycja.IdProduct = idProduct.ToString();
@@ -2567,10 +2640,11 @@ id ostatniego wgranego dokumentu 8185910*/
                 pozycja.Netto = double.Parse(netto.ToString());
                 pozycja.StawkaVAT = int.Parse(stawkaVAT.ToString());
                 pozycja.Vat = double.Parse(vAT.ToString());
+                pozycja.Validation = double.Parse(validation.ToString());
 
-                _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat));
+                _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation));
 
-                //int validation = val["is_valid"]; // pobiera validation 
+                
                 //string zero = "0";
                 //string jeden = "1";
 
@@ -2605,61 +2679,61 @@ id ostatniego wgranego dokumentu 8185910*/
                 new XElement("Dokument", new XAttribute("version", "2.0"),
                 new XElement("Dane", new XElement("Test", "1.0"),
                  new XElement("Nabywca",
-                     new XElement("NabywcaAdres", _NabywcaAdres),
-                     new XElement("NabywcaKod", _NabywcaKod),
-                     new XElement("NabywcaMiejscowosc", _NabywcaMiejscowosc),
-                     new XElement("NabywcaNazwa", _NabywcaNazwa),
-                     new XElement("NabywcaNip", _NabywcaNip)
+                     new XElement("NabywcaAdres", new XAttribute("is_valid", _rNabywcaAdres), _NabywcaAdres),
+                     new XElement("NabywcaKod", new XAttribute("is_valid", _rNabywcaKod), _NabywcaKod),
+                     new XElement("NabywcaMiejscowosc", new XAttribute("is_valid", _rNabywcaMiejscowosc), _NabywcaMiejscowosc),
+                     new XElement("NabywcaNazwa", new XAttribute("is_valid", _rNabywcaNazwa), _NabywcaNazwa),
+                     new XElement("NabywcaNip",new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
                 ),
                 new XElement("Sprzedawca",
-                     new XElement("SprzedawcaAdres", _SprzedawcaAdres),
-                     new XElement("SprzedawcaKod", _SprzedawcaKod),
-                     new XElement("SprzedawcaMiejscowosc", _SprzedawcaMiejscowosc),
-                     new XElement("SprzedawcaNazwa", _SprzedawcaNazwa),
-                     new XElement("SprzedawcaNip", _SprzedawcaNip),
-                     new XElement("KontoBankowe", _KontoBankowe)
+                     new XElement("SprzedawcaAdres", new XAttribute("is_valid", _rSprzedawcaAdres), _SprzedawcaAdres),
+                     new XElement("SprzedawcaKod", new XAttribute("is_valid", _rSprzedawcaKod), _SprzedawcaKod),
+                     new XElement("SprzedawcaMiejscowosc", new XAttribute("is_valid", _rSprzedawcaMiejscowosc), _SprzedawcaMiejscowosc),
+                     new XElement("SprzedawcaNazwa", new XAttribute("is_valid", _rSprzedawcaNazwa), _SprzedawcaNazwa),
+                     new XElement("SprzedawcaNip", new XAttribute("is_valid", _rSprzedawcaNip), _SprzedawcaNip),
+                     new XElement("KontoBankowe", new XAttribute("is_valid", _rKontoBankowe), _KontoBankowe)
                 ),
                 new XElement("Numeracja_i_daty",
-                     new XElement("NrFaktury", _NrFaktury),
-                     new XElement("FakturaKorygowana", _FakturaKorygowana),
-                     new XElement("Korygujaca", _Korygujaca),
-                     new XElement("PrzyczynaKorekty", _PrzyczynaKorekty),
-                     new XElement("DataSprzedazy", _DataSprzedazy),
-                     new XElement("DataWplywu", _DataWplywu),
-                     new XElement("DataWystawienia", _DataWystawienia),
-                     new XElement("MiesiacKsiegowy", _MiesiacKsiegowy)
+                     new XElement("NrFaktury", new XAttribute("is_valid", _rNrFaktury), _NrFaktury),
+                     new XElement("FakturaKorygowana", new XAttribute("is_valid", _rFakturaKorygowana), _FakturaKorygowana),
+                     new XElement("Korygujaca", new XAttribute("is_valid", _rKorygujaca), _Korygujaca),
+                     new XElement("PrzyczynaKorekty", new XAttribute("is_valid", _rPrzyczynaKorekty), _PrzyczynaKorekty),
+                     new XElement("DataSprzedazy", new XAttribute("is_valid", _rDataSprzedazy), _DataSprzedazy),
+                     new XElement("DataWplywu", new XAttribute("is_valid", _rDataWplywu), _DataWplywu),
+                     new XElement("DataWystawienia", new XAttribute("is_valid", _rDataWystawienia), _DataWystawienia),
+                     new XElement("MiesiacKsiegowy", new XAttribute("is_valid", _rMiesiacKsiegowy), _MiesiacKsiegowy)
                      ),
                 new XElement("Kwoty",
-                     new XElement("NrZamowienia", _NrZamowienia),
-                      new XElement("CategoryDesc", _CategoryDesc),
-                     new XElement("CzyNieKompletnaPozycja", _CzyNieKompletnaPozycja),
-                     new XElement("Kategoria", _Kategoria),
-                     new XElement("KategoriaId", _KategoriaId),
-                     new XElement("Waluta", _Waluta),
-                     new XElement("KursWaluty", _KursWaluty),
+                     new XElement("NrZamowienia", new XAttribute("is_valid", _rNrZamowienia), _NrZamowienia),
+                     // new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCategoryDesc), _CategoryDesc),
+                     new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCzyNieKompletnaPozycja), _CzyNieKompletnaPozycja),
+                     //new XElement("Kategoria", new XAttribute("is_valid", _rKategoria), _Kategoria),
+                     //new XElement("KategoriaId", new XAttribute("is_valid",_rKategoriaId), _KategoriaId),
+                     new XElement("Waluta", new XAttribute("is_valid", _rWaluta), _Waluta),
+                     new XElement("KursWaluty", new XAttribute("is_valid", _rKursWaluty), _KursWaluty),
                         new XElement("Pozycje",
                         from pozycja in _listaPozycji
-                        select new XElement("pozycja",
+                        select new XElement("pozycja", new XAttribute("is_valid", pozycja.Validation),
                             new XElement("Nazwa", pozycja.Nazwa),
                             new XElement("Brutto", pozycja.Brutto),
-                            new XElement("Cena", pozycja.Cena),
+                            new XElement("Cena",  pozycja.Cena),
                             new XElement("IdProductField", pozycja.IdProduct),
-                            new XElement("Ilosc", pozycja.Ilosc),
-                            new XElement("Jednostka", pozycja.Jednostka),
-                            new XElement("Netto", pozycja.Netto),
+                            new XElement("Ilosc",  pozycja.Ilosc),
+                            new XElement("Jednostka",  pozycja.Jednostka),
+                            new XElement("Netto",  pozycja.Netto),
                             new XElement("StawkaVAT", pozycja.StawkaVAT),
-                             new XElement("VAT", pozycja.Vat),
+                             new XElement("VAT",  pozycja.Vat),
                             new XElement("product_code", pozycja.Product_code)
                         ),
-                     new XElement("BruttoWalutaPodstawowa", _BruttoWalutaPodstawowa),
-                     new XElement("NettoWalutaPodstawowa", _NettoWalutaPodstawowa),
-                     new XElement("RazemNetto", _RazemNetto),
-                     new XElement("RazemVAT", _RazemVAT),
-                     new XElement("VatWalutaPodstawowa", _VatWalutaPodstawowa),
-                     new XElement("RazemBrutto", _RazemBrutto),
-                     new XElement("SposobPlatnosci", _SposobPlatnosci),
-                     new XElement("TerminPlatnosci", _TerminPlatnosci),
-                     new XElement("Zaplacono", _Zaplacono)
+                     new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
+                     new XElement("NettoWalutaPodstawowa", new XAttribute("is_valid", _rNettoWalutaPodstawowa), _NettoWalutaPodstawowa),
+                     new XElement("RazemNetto", new XAttribute("is_valid", _rRazemNetto), _RazemNetto),
+                     new XElement("RazemVAT", new XAttribute("is_valid", _rRazemVAT), _RazemVAT),
+                     new XElement("VatWalutaPodstawowa", new XAttribute("is_valid", _rVatWalutaPodstawowa), _VatWalutaPodstawowa),
+                     new XElement("RazemBrutto", new XAttribute("is_valid", _rRazemBrutto), _RazemBrutto),
+                     new XElement("SposobPlatnosci", new XAttribute("is_valid", _rSposobPlatnosci), _SposobPlatnosci),
+                     new XElement("TerminPlatnosci", new XAttribute("is_valid", _rTerminPlatnosci), _TerminPlatnosci),
+                     new XElement("Zaplacono", new XAttribute("is_valid", _rZaplacono), _Zaplacono)
                 )
                 ))));
 

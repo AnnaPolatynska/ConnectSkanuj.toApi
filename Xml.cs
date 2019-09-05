@@ -6,17 +6,6 @@ namespace nsXml
 {
     public partial class PozycjaXml
     {
-
-        /*string idProduct = val["IdProduct"];
-                string product_code = val["product_code"];
-                string nazwa = val["Nazwa"];
-                double ilosc = val["Ilosc"];
-                string jednostka = val["Jednostka"];
-                double cena = val["Cena"];
-                double brutto = val["Brutto"];
-                double netto = val["Netto"];
-                int stawkaVAT = val["StawkaVAT"];
-                double vAT = val["VAT"];*/
         private string IdProductField;
         private string ProductcodeField;
         private string NazwaField;
@@ -27,6 +16,7 @@ namespace nsXml
         private double NettoField;
         private int StawkaVATField;
         private double VatField;
+        private double ValidationField;
 
         public string IdProduct
         {
@@ -79,7 +69,13 @@ namespace nsXml
             set { VatField = value; }
         }
 
-        public PozycjaXml(string IdProductField, string ProductcodeField, string NazwaField, double IloscField, string JednostkaField, double CenaField, double BruttoField, double NettoField, int StawkaVATField, double VatField)
+        public double Validation
+        {
+            get { return ValidationField; }
+            set { ValidationField = value; }
+        }
+
+        public PozycjaXml(string IdProductField, string ProductcodeField, string NazwaField, double IloscField, string JednostkaField, double CenaField, double BruttoField, double NettoField, int StawkaVATField, double VatField, double validation)
         {
             this.IdProduct = IdProductField;
             this.Product_code = ProductcodeField;
