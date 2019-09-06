@@ -203,7 +203,7 @@ namespace nsTEST_Skanuj_to
                     Console.WriteLine(e.Message);
                     continue;
                 }
-                //program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
+                program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
                 //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
                 //Wgranie dokumentu do Api - dane do MSSerwer.
                 try
@@ -1273,32 +1273,9 @@ namespace nsTEST_Skanuj_to
                         }
                     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 }//if
                  // else { Console.WriteLine("niedopasowanie " + _2DB_name + " różne " + _J_nameDoc); }
             }//for
-
-
-
 
             //Console.WriteLine("GetInfoDocumentList serch-> " + content);// odpowiedz
             Console.WriteLine(" ");
@@ -1313,25 +1290,27 @@ namespace nsTEST_Skanuj_to
         /// <param name="Message"></param>
         public void WriteToFile(string Message)
         {
-            string path = AppDomain.CurrentDomain.BaseDirectory + "\\ArchiwumX";
-            if (!Directory.Exists(path))
+            //string path = AppDomain.CurrentDomain.BaseDirectory + "\\ArchiwumX";
+            string logpath = System.Configuration.ConfigurationManager.AppSettings["logPath"].ToString();
+            if (!Directory.Exists(logpath))
             {
-                Directory.CreateDirectory(path);
+                Directory.CreateDirectory(logpath);
             }
-
+            System.IO.Directory.SetCurrentDirectory(logpath);
             //if (!System.IO.Directory.Exists(@"C:\TestFolder\"))
             //{
             //    System.IO.Directory.CreateDirectory(@"C:\TestFolder\");
             //}
 
-            //System.IO.Directory.SetCurrentDirectory(@"C:\TestFolder\");
+
 
             //currentDirName = System.IO.Directory.GetCurrentDirectory();
             //Console.WriteLine("currentDirName " + currentDirName);
 
 
 
-            string logFilepath = AppDomain.CurrentDomain.BaseDirectory + "\\ArchiwumX\\ServiceLog.txt";
+            //string logFilepath = AppDomain.CurrentDomain.BaseDirectory + "\\ArchiwumX\\ServiceLog.txt";
+            string logFilepath = logpath + "\\ServiceLog.txt";
             if (!File.Exists(logFilepath))
             {
                 // Stworzenie pliku do zapisu.   
