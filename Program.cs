@@ -24,12 +24,11 @@ namespace nsTEST_Skanuj_to
 
         #region _ogólnodostępne
         //private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
-        static string _fileName = System.Configuration.ConfigurationManager.AppSettings["fileName"].ToString();//"Test.pdf";//"Test.pdf";
-        static string _path = System.Configuration.ConfigurationManager.AppSettings["path"].ToString() + _fileName; //C:\\Konektora "C:/Users/polann/Desktop/pliki_do_konectora/Test.pdf";
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
 
         public static string _connString = System.Configuration.ConfigurationManager.ConnectionStrings["ConnectionSQL"].ConnectionString;
         public static int _idDocument; //id dokumentu do pobrania 8185910
+        static string _fileName;
 
         public static int _J_idDocument;
         public static int _J_parent_doc_id;
@@ -182,57 +181,62 @@ namespace nsTEST_Skanuj_to
 
             ////Wrzuca pliki z podanej lokalizacji do API
             #region plikiDoAPI
-            ////if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
-            ////{
-            ////    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
-            ////}
-            //System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_In\");
-            //string endFileName = System.IO.Directory.GetCurrentDirectory();
-            //Console.WriteLine(endFileName);
-            //string[] files = System.IO.Directory.GetFiles(endFileName, "*.*");
-            //foreach (string s in files)
+            //if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
             //{
-            //    System.IO.FileInfo fi = null;
-            //    try
-            //    {
-            //        fi = new System.IO.FileInfo(s);
-            //    }
-            //    catch (System.IO.FileNotFoundException e)
-            //    {
-            //        Console.WriteLine(e.Message);
-            //        continue;
-            //    }
-            //    Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-            //    //Wgranie dokumentu do Api - dane do MSSerwer.
-            //    //try
-            //    //{
-            //    _fileName = fi.Name.ToString();
-            //    _path = fi.Directory.ToString() + "/" + _fileName;
-            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
-            //   // Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date +
-            //    //    "  _2DB_user_id " + _2DB_user_id);
+            //    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
+            //}
 
-            //    //if (_notice == "") //jeżeli plik jest nowy
-            //    //{
-            //    //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-            //    //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id nowego dokumentu " + _newIdDocument + ").");
-            //    //}
-            //    //else
-            //    //{
-            //    //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
-            //    //}
-            //    //}//try uploadDocument
-            //    //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ")."); }
-            //    Console.WriteLine(" ");
-            //}//foreach
+            string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+            System.IO.Directory.SetCurrentDirectory(startPath);
+            string endFileName = System.IO.Directory.GetCurrentDirectory();
+            Console.WriteLine(endFileName);
+            string[] files = System.IO.Directory.GetFiles(endFileName, "*.pdf");
+            foreach (string s in files)
+            {
+                System.IO.FileInfo fi = null;
+                try
+                {
+                    fi = new System.IO.FileInfo(s);
+                }
+                catch (System.IO.FileNotFoundException e)
+                {
+                    Console.WriteLine(e.Message);
+                    continue;
+                }
+                //program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
+                //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+                //Wgranie dokumentu do Api - dane do MSSerwer.
+                try
+                {
+                    string fileName = fi.Name.ToString();
+                    string path = fi.Directory.ToString() + "/" + fileName;
+                    program.uploadDocument(_idUser, fileName, path, _multi);
+                    //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
+                    // Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + " _2DB_user_id " + _2DB_user_id);
+                    if (_notice == "") //jeżeli plik jest nowy
+                    {
+                        //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+                        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany. Id nowego dokumentu " + _newIdDocument + ").");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Plik " + _documentName + " już istnieje.");
+                    }
+                }//try uploadDocument
+                catch
+                {
+                    program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ").");
+                }
+                Console.WriteLine(" ");
+            }//foreach
             #endregion
 
             //ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
             //program.GetDocumentList();
 
             //OK Generuje xml
-            GenerateXMLFromDoc();
-          
+            // GenerateXMLFromDoc();
+
 
 
 
@@ -241,7 +245,7 @@ namespace nsTEST_Skanuj_to
 
 
             //LAB 
-            
+
             //try
             //{
             //    program.GetDataFromDoc(_idDocument); //OK pobiera dane z dokumentu o podanym id
@@ -911,10 +915,10 @@ namespace nsTEST_Skanuj_to
                 _2DB_pages = int.Parse((dataRow[@"pages"].ToString()));
                 _2DB_parent_doc_id = int.Parse((dataRow[@"parent_doc_id"].ToString()));
                 //_J_count_pages = 
-               // Console.WriteLine("w DB Dokument " + _2DB_name + " ma " + _2DB_pages + " stron ");
+                // Console.WriteLine("w DB Dokument " + _2DB_name + " ma " + _2DB_pages + " stron ");
 
                 //sprawdzenie z jsona
-               // program.GetInfoDocumentList(_2DB_name);
+                // program.GetInfoDocumentList(_2DB_name);
 
             }// foreach
             sqlConnection.Close();
@@ -942,7 +946,7 @@ namespace nsTEST_Skanuj_to
                 _documentName = dataRow["name"].ToString();
                 _J_parent_doc_id = int.Parse(dataRow["parent_doc_id"].ToString());
                 _J_pages = int.Parse(dataRow["pages"].ToString());
-                                
+
                 try
                 {
                     program.GetDataFromDoc(idDocum); //OK pobiera dane z dokumentu o podanym id
@@ -1160,7 +1164,7 @@ namespace nsTEST_Skanuj_to
                 {
                     _J_parent_doc_id = 0;
                 }
-                      
+
                 InsertAllIntoDB(); //OK Wgrywa wszystko z jsona.
 
             }//for
@@ -1908,7 +1912,7 @@ id ostatniego wgranego dokumentu 8185910*/
             catch { };
             try
             {
-                
+
                 string rozp1 = (data["attributes"]["CategoryDesc"]["is_valid"]).ToString();
                 int statusA1 = data["attributes"]["CategoryDesc"]["status"];
                 string value1 = (data["attributes"]["CategoryDesc"]["value"]);
@@ -2644,7 +2648,7 @@ id ostatniego wgranego dokumentu 8185910*/
 
                 _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation));
 
-                
+
                 //string zero = "0";
                 //string jeden = "1";
 
@@ -2683,7 +2687,7 @@ id ostatniego wgranego dokumentu 8185910*/
                      new XElement("NabywcaKod", new XAttribute("is_valid", _rNabywcaKod), _NabywcaKod),
                      new XElement("NabywcaMiejscowosc", new XAttribute("is_valid", _rNabywcaMiejscowosc), _NabywcaMiejscowosc),
                      new XElement("NabywcaNazwa", new XAttribute("is_valid", _rNabywcaNazwa), _NabywcaNazwa),
-                     new XElement("NabywcaNip",new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
+                     new XElement("NabywcaNip", new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
                 ),
                 new XElement("Sprzedawca",
                      new XElement("SprzedawcaAdres", new XAttribute("is_valid", _rSprzedawcaAdres), _SprzedawcaAdres),
@@ -2716,13 +2720,13 @@ id ostatniego wgranego dokumentu 8185910*/
                         select new XElement("pozycja", new XAttribute("is_valid", pozycja.Validation),
                             new XElement("Nazwa", pozycja.Nazwa),
                             new XElement("Brutto", pozycja.Brutto),
-                            new XElement("Cena",  pozycja.Cena),
+                            new XElement("Cena", pozycja.Cena),
                             new XElement("IdProductField", pozycja.IdProduct),
-                            new XElement("Ilosc",  pozycja.Ilosc),
-                            new XElement("Jednostka",  pozycja.Jednostka),
-                            new XElement("Netto",  pozycja.Netto),
+                            new XElement("Ilosc", pozycja.Ilosc),
+                            new XElement("Jednostka", pozycja.Jednostka),
+                            new XElement("Netto", pozycja.Netto),
                             new XElement("StawkaVAT", pozycja.StawkaVAT),
-                             new XElement("VAT",  pozycja.Vat),
+                             new XElement("VAT", pozycja.Vat),
                             new XElement("product_code", pozycja.Product_code)
                         ),
                      new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
@@ -2737,24 +2741,17 @@ id ostatniego wgranego dokumentu 8185910*/
                 )
                 ))));
 
-            //string name = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
             string longnazwa = _documentName.ToString().Replace('/', '_');
-            string nazwa = longnazwa.Substring(0, longnazwa.Length-4);
+            string nazwa = longnazwa.Substring(0, longnazwa.Length - 4);
 
             string filename = nazwa + "_" + _idDocument + ".txt";
 
-            //string path = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
-
-
-
-
-
-            if (!System.IO.Directory.Exists(@"C:\Konektor_Out\"))
+            string endpath = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
+            if (!System.IO.Directory.Exists(endpath))
             {
-                System.IO.Directory.CreateDirectory(@"C:\Konektor_Out\");
+                System.IO.Directory.CreateDirectory(endpath);
             }
-
-            System.IO.Directory.SetCurrentDirectory(@"C:\Konektor_Out\");
+            System.IO.Directory.SetCurrentDirectory(endpath);
 
             string currentDirName = System.IO.Directory.GetCurrentDirectory();
             Console.WriteLine("currentDirName " + currentDirName);
@@ -2784,7 +2781,7 @@ id ostatniego wgranego dokumentu 8185910*/
                 catch
                 { WriteToFile("Problem z wygenerowaniem pliku" + filename + " " + DateTime.Now); }
             }
-            
+
         }//CreateXML(string filename)
 
 
