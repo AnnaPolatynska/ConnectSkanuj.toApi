@@ -237,13 +237,6 @@ namespace nsTEST_Skanuj_to
             //OK Generuje xml
             GenerateXMLFromDoc();
 
-
-
-
-
-
-
-
             //LAB 
 
             //try
@@ -1006,7 +999,7 @@ namespace nsTEST_Skanuj_to
             }// foreach
 
             sqlConnection.Close();
-        }//FindStatusInDB()
+        }//GenerateXMLFromDoc
 
         public List<DocumentList> GetInfoFromDocumentList(int idDoc)
         {
