@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -242,156 +243,67 @@ namespace nsTEST_Skanuj_to
 
             //LAB 
 
-
-
-
-
-
-
-            //////scal 2 pdf w 1 dokument - nie działa
-            ////string Path = "C:/Konektor_In/";
-            ////string filename1 = "KRAM5.pdf";
-            ////string filename2 = "KRAM6.pdf";
-            ////string endname = "TESToutDoc.pdf";
-
-            ////string startPath = Path + filename1;
-            ////System.IO.Directory.SetCurrentDirectory(Path);
-
-            ////string endPath = Path + endname;
-
-            ////PdfDocument inputDocument1 = PdfReader.Open(filename1, PdfDocumentOpenMode.Import);
-            ////PdfDocument inputDocument2 = PdfReader.Open(filename2, PdfDocumentOpenMode.Import);
-            ////PdfDocument outputDocument = new PdfDocument();
-
-
-            //////program.LoadPDFFile(Path + "2"+filename1);
-            //////program.LoadPDFFile(Path + "2" + filename2);
-            ////program.Append(Path + filename2);
-            ////program.SavePdf(endPath);
-
-
             string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
             Console.WriteLine("startPath " + startPath);
             System.IO.Directory.SetCurrentDirectory(startPath);
             string finalPath = System.IO.Directory.GetCurrentDirectory();
-            Console.WriteLine("finalPath " + finalPath);
-            string filename1 = "KRAM5.pdf";
-            string filename2 = "KRAM6.pdf";
-            var outputDocument = new PdfDocument();
+            string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
 
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-            using (var stream = File.Open(finalPath + "\\" + filename1, FileMode.Open, FileAccess.Read))
+            string[] filesPdf = System.IO.Directory.GetFiles(finalPath, "*.pdf");
+            //tworzy katalog dla pdf, jeżeli jeszcze nie został stworzony.
+            if (!System.IO.Directory.Exists(pdfPath))
             {
-                using (var reader = XPdfForm.FromStream(stream))
+                System.IO.Directory.CreateDirectory(pdfPath);
+            }
+
+            foreach (string s in filesPdf)
+            {
+                //odczytuje nazwy plików ze wskazanego folderu 
+                System.IO.FileInfo fi = null;
+                try
                 {
-                   
+                    fi = new System.IO.FileInfo(s);
                 }
-            }
-            // PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
+                catch (System.IO.FileNotFoundException e)
+                {
+                    continue;
+                }
+                string filename1 = fi.Name.ToString(); //dynamicznie zmieniana nazwa
+                var outputDocument = new PdfDocument();
 
-            var inputDocument1 = PdfReader.Open(finalPath + "\\" + filename1, PdfDocumentOpenMode.Import);
+                //zapewnienie odpowiedniego kodowania pdf
+                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+                using (var stream = File.Open(finalPath + "\\" + filename1, FileMode.Open, FileAccess.Read))
+                {
+                    using (var reader = XPdfForm.FromStream(stream))
+                    {
 
-            for (var pg = 0; pg < inputDocument1.Pages.Count; pg++)
-            {
-                outputDocument.AddPage(inputDocument1.Pages[pg]);
-            }
-            //var inputDocument2 = PdfReader.Open(startPath + filename2, PdfDocumentOpenMode.Import);
+                    }
+                }
+                var inputDocument1 = PdfReader.Open(finalPath + "\\" + filename1, PdfDocumentOpenMode.Import);
 
-            outputDocument.Save(finalPath + "\\" + "test.pdf");
+                var pg = 0;
 
-            //outputDocument.PageLayout = PdfPageLayout.OneColumn;
-            //XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
-            //XFont font = new XFont("Times New Roman", 12, XFontStyle.Regular, options);
-            //XStringFormat format = new XStringFormat();
+                for (pg = 0; pg < inputDocument1.Pages.Count; pg++)
+                {
+                    outputDocument.AddPage(inputDocument1.Pages[pg]);
+                    //PdfPage page = inputpdfDocument.Pages[pg];
+                    //outpdfDocument.AddPage(page);
+                }
+                //outputDocument.AddPage(inputDocument1.Pages[0]);
+                
+                //zapis nowego dokumentu pdf pod wskazaną lokalizację 
+                string sfilename1 = filename1.Substring(0, (filename1.Length) - 4);
+                int count = outputDocument.PageCount;
+                string filenamePDF = sfilename1 + pg + "z" + count + ".pdf";
+                outputDocument.Save(pdfPath + "\\" + filenamePDF);
 
-            //format.Alignment = XStringAlignment.Center;
-            //format.LineAlignment = XLineAlignment.Far;
 
-            //XGraphics gfx;
-            //XRect box;
-
-            //int count = Math.Max(inputDocument1.PageCount, inputDocument2.PageCount);
-            //for (int idx = 0; idx < count; idx++)
-            //{
-            //    // pobranie stron z 1 dokumentu
-            //    PdfPage page1 = inputDocument1.PageCount > idx ?
-            //    inputDocument1.Pages[idx] : new PdfPage();
-            //    // pobranie stron z 2 dokumentu
-            //    PdfPage page2 = inputDocument2.PageCount > idx ?
-            //    inputDocument2.Pages[idx] : new PdfPage();
-
-            //    // połaczenie dokumentów w trzeci dokument
-            //    page1 = outputDocument.AddPage(page1);
-            //    page2 = outputDocument.AddPage(page2);
-
-            //    // Zapisz nazwę dokumentu i numer na każdej stronie
-            //    gfx = XGraphics.FromPdfPage(page1);
-            //    box = page1.MediaBox.ToXRect();
-            //    box.Inflate(0, -10);
-            //    gfx.DrawString(String.Format("{0} • {1}", filename1, idx + 1), font, XBrushes.Red, box, format);
-            //    gfx = XGraphics.FromPdfPage(page2);
-            //    box = page2.MediaBox.ToXRect();
-            //    box.Inflate(0, -10);
-            //    gfx.DrawString(String.Format("{0} • {1}", filename2, idx + 1), font, XBrushes.Red, box, format);
-            //}
-
-            //// zapis documentu
-            //const string filename = "OutFile.pdf";
-            //outputDocument.Save(filename);
+            }//foreach
 
 
 
 
-            ////Wywala błąd unicode
-            //string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
-            //Console.WriteLine("startPath " + startPath);
-            //System.IO.Directory.SetCurrentDirectory(startPath);
-            //string finalPath = System.IO.Directory.GetCurrentDirectory();
-            //Console.WriteLine("finalPath " + finalPath);
-
-            //XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
-            //string[] files = System.IO.Directory.GetFiles(finalPath, "*.pdf");
-
-            //foreach (string s in files)
-            //{
-            //    //odczytuje nazwy plików ze wskazanego folderu 
-            //    System.IO.FileInfo fi = null;
-            //    try
-            //    {
-            //        fi = new System.IO.FileInfo(s);
-            //    }
-            //    catch (System.IO.FileNotFoundException e)
-            //    {
-            //        continue;
-            //    }
-            //    //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-            //    PdfDocument outpdfDocument = new PdfDocument();
-
-            //    //nazwy plików
-            //    string fileName = fi.Name.ToString();
-            //    Console.WriteLine("fileName " + fileName);
-
-            //    PdfDocument inputpdfDocument = PdfReader.Open(s, PdfDocumentOpenMode.Import);//
-            //    // zliczenie stron
-            //    int count = inputpdfDocument.PageCount;
-            //    for (int idx = 0; idx < count; idx++)
-            //    {
-            //        PdfPage page = inputpdfDocument.Pages[idx];
-            //        outpdfDocument.AddPage(page);
-            //    }
-
-            //    //program.LoadPDFFile(fileName);
-            //    //program.Append(fileName);
-            //    //program.SavePdf(endname);
-
-            //    Console.WriteLine(" ");
-            //    outpdfDocument.Save("kopia_test.pdf");
-            //}//foreach
-
-            //zapis pdf
-            //const string endFileName = "Test.pdf";
-
-            //Process.Start(endFileName);
 
 
 
