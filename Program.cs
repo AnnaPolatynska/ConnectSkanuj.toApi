@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json.Linq;
 using nsSkanuj;
 using nsXml;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -9,7 +12,6 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
-using File = System.IO.File;
 
 namespace nsTEST_Skanuj_to
 {
@@ -23,7 +25,7 @@ namespace nsTEST_Skanuj_to
     {
 
         #region _ogólnodostępne
-        //private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["endFileName"].ToString();
+        //private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["finalPath"].ToString();
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
 
         public static string _connString = System.Configuration.ConfigurationManager.ConnectionStrings["ConnectionSQL"].ConnectionString;
@@ -67,7 +69,6 @@ namespace nsTEST_Skanuj_to
         public static int _statusDoc = 0; //statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
 
         public static int _stateForProcess; // status dokumentu w bazie
-
 
         //2DB
         public static int _2DB_doc_id;
@@ -155,121 +156,246 @@ namespace nsTEST_Skanuj_to
         public static string _rWaluta;
         public static string _rZaplacono;
         List<PozycjaXml> _listaPozycji = new List<PozycjaXml>(); //lista pozycji wyszczególnionych na fa.
+
+        public PdfDocument _pdfDoc = null;
         #endregion
 
         public static void Main(string[] args)
         {
             Program program = new Program();
-            ////Logowanie, uzyskanie tokenu i pobranie danych firmy.
-            try
-            {
-                _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;//ok pobiera token.
-            }
-            catch { program.WriteToFile("Problem z uzyskaniem tokenu."); }
-            Console.WriteLine(" ");
-
-            try
-            {
-                program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
-                //Console.WriteLine("C _idUser -> " + _idUser.ToString());
-                //Console.WriteLine("C _nameUserCompany -> " + _nameUserCompany);
-                //Console.WriteLine("C _NipMyCompany -> " + _nipUserCompany);
-                Console.WriteLine(" ");
-            }
-            catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
-            Console.WriteLine(" ");
-
-            ////Wrzuca pliki z podanej lokalizacji do API
-            #region plikiDoAPI
-            //if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
+            //////Logowanie, uzyskanie tokenu i pobranie danych firmy.
+            //try
             //{
-            //    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
+            //    _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;//ok pobiera token.
             //}
-
-            string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
-            System.IO.Directory.SetCurrentDirectory(startPath);
-            string endFileName = System.IO.Directory.GetCurrentDirectory();
-            Console.WriteLine(endFileName);
-            string[] files = System.IO.Directory.GetFiles(endFileName, "*.pdf");
-            foreach (string s in files)
-            {
-                System.IO.FileInfo fi = null;
-                try
-                {
-                    fi = new System.IO.FileInfo(s);
-                }
-                catch (System.IO.FileNotFoundException e)
-                {
-                    program.WriteToFile(e.Message + " " +endFileName+ " " +DateTime.Now);
-                    continue;
-                }
-                //program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
-                //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-                //Wgranie dokumentu do Api - dane do MSSerwer.
-                try
-                {
-                    string fileName = fi.Name.ToString();
-                    string path = fi.Directory.ToString() + "/" + fileName;
-                    program.uploadDocument(_idUser, fileName, path, _multi);
-                    ////OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
-                    //// Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + " _2DB_user_id " + _2DB_user_id);
-                    //if (_notice == "") //jeżeli plik jest nowy
-                    //{
-                    //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-                    //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany. Id nowego dokumentu " + _newIdDocument + ").");
-                    //}
-                    //else
-                    //{
-                    //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
-                    //}
-                }//try uploadDocument
-                catch
-                {
-                    program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ").");
-                }
-                Console.WriteLine(" ");
-            }//foreach
-            #endregion
-
-            //ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
-            program.GetDocumentList();
-
-            //OK Generuje xml
-            GenerateXMLFromDoc();
-
-            //LAB 
+            //catch { program.WriteToFile("Problem z uzyskaniem tokenu."); }
+            //Console.WriteLine(" ");
 
             //try
             //{
-            //    program.GetDataFromDoc(_idDocument); //OK pobiera dane z dokumentu o podanym id
+            //    program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
+            //    //Console.WriteLine("C _idUser -> " + _idUser.ToString());
+            //    //Console.WriteLine("C _nameUserCompany -> " + _nameUserCompany);
+            //    //Console.WriteLine("C _NipMyCompany -> " + _nipUserCompany);
+            //    Console.WriteLine(" ");
             //}
-            //catch { Console.WriteLine("nie istnieje dokument o podanym id " + _idDocument); }
+            //catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
             //Console.WriteLine(" ");
-            //program.FillPositionFromDocToXml(_idDocument);//OK wgrywa poszczególne pozycję z fa do xml.
-            //Console.WriteLine(" ");
-            //program.CreateXML();//OK zapis danych do xml
 
-            //sprawdzenie z jsona
-            //program.GetVeryficationStateByIdDoc(8185917);
-            //program.GetStatusDocumentList(8185917);
-            //program.GetInfoFromDocumentList(8185917);
+            //////Wrzuca pliki z podanej lokalizacji do API
+            //#region plikiDoAPI
+            ////if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
+            ////{
+            ////    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
+            ////}
 
-            //program.GetInfoDocumentList(_2DB_name);
+            //string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+            //System.IO.Directory.SetCurrentDirectory(startPath);
+            //string finalPath = System.IO.Directory.GetCurrentDirectory();
+            //Console.WriteLine(finalPath);
+            //string[] files = System.IO.Directory.GetFiles(finalPath, "*.pdf");
+            //foreach (string s in files)
+            //{
+            //    System.IO.FileInfo fi = null;
+            //    try
+            //    {
+            //        fi = new System.IO.FileInfo(s);
+            //    }
+            //    catch (System.IO.FileNotFoundException e)
+            //    {
+            //        program.WriteToFile(e.Message + " " + finalPath + " " + DateTime.Now);
+            //        continue;
+            //    }
+            //    //program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
+            //    //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+            //    //Wgranie dokumentu do Api - dane do MSSerwer.
+            //    try
+            //    {
+            //        string fileName = fi.Name.ToString();
+            //        string path = fi.Directory.ToString() + "/" + fileName;
+            //        program.uploadDocument(_idUser, fileName, path, _multi);
+            //        ////OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
+            //        //// Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + " _2DB_user_id " + _2DB_user_id);
+            //        //if (_notice == "") //jeżeli plik jest nowy
+            //        //{
+            //        //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+            //        //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany. Id nowego dokumentu " + _newIdDocument + ").");
+            //        //}
+            //        //else
+            //        //{
+            //        //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
+            //        //}
+            //    }//try uploadDocument
+            //    catch
+            //    {
+            //        program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ").");
+            //    }
+            //    Console.WriteLine(" ");
+            //}//foreach
+            //#endregion
 
-            // UpdateStatusDocInDB();//OK Aktualizuje status dokumentów w bazie danych
-            // UpdateInfoDocInDB(); //aktualizuje id, parent id liczbę stron
+            ////ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
+            //program.GetDocumentList();
 
-            //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-            //program.GetDataFromDoc(8497350); //ok pobiera rozpoznane dane ze wskazanego dokumentu
-            //program.GetIdParentIdFromDoc(8498032);//8492054 //8498023 //OK Pobiera dla dokumentów wielostronicowych dane id_dokumentu i parent_doc_id 
-            //Console.WriteLine(" ");
-            //program.GetAllDocumentList(8498023); //!!! Zwraca ostaniego z listy
+            ////OK Generuje xml
+            //GenerateXMLFromDoc();
 
-            //if (pages != 1)
-            //{ Console.WriteLine("Dokument " + pages + " stronicowy - dokument " + idDoc); }
-            //else { Console.WriteLine("Dokument " + pages + " stronicowy - dokument " + idDoc); }
-            //Console.WriteLine(" ");
-            //Console.WriteLine(" dla dokumentu " + idDoc + " status jsonArray " + _J_stateDoc);
+            //LAB 
+
+
+
+
+
+
+
+            //////scal 2 pdf w 1 dokument - nie działa
+            ////string Path = "C:/Konektor_In/";
+            ////string filename1 = "KRAM5.pdf";
+            ////string filename2 = "KRAM6.pdf";
+            ////string endname = "TESToutDoc.pdf";
+
+            ////string startPath = Path + filename1;
+            ////System.IO.Directory.SetCurrentDirectory(Path);
+
+            ////string endPath = Path + endname;
+
+            ////PdfDocument inputDocument1 = PdfReader.Open(filename1, PdfDocumentOpenMode.Import);
+            ////PdfDocument inputDocument2 = PdfReader.Open(filename2, PdfDocumentOpenMode.Import);
+            ////PdfDocument outputDocument = new PdfDocument();
+
+
+            //////program.LoadPDFFile(Path + "2"+filename1);
+            //////program.LoadPDFFile(Path + "2" + filename2);
+            ////program.Append(Path + filename2);
+            ////program.SavePdf(endPath);
+
+
+            string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+            Console.WriteLine("startPath " + startPath);
+            System.IO.Directory.SetCurrentDirectory(startPath);
+            string finalPath = System.IO.Directory.GetCurrentDirectory();
+            Console.WriteLine("finalPath " + finalPath);
+            string filename1 = "KRAM5.pdf";
+            string filename2 = "KRAM6.pdf";
+            var outputDocument = new PdfDocument();
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            using (var stream = File.Open(finalPath + "\\" + filename1, FileMode.Open, FileAccess.Read))
+            {
+                using (var reader = XPdfForm.FromStream(stream))
+                {
+                   
+                }
+            }
+            // PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
+
+            var inputDocument1 = PdfReader.Open(finalPath + "\\" + filename1, PdfDocumentOpenMode.Import);
+
+            for (var pg = 0; pg < inputDocument1.Pages.Count; pg++)
+            {
+                outputDocument.AddPage(inputDocument1.Pages[pg]);
+            }
+            //var inputDocument2 = PdfReader.Open(startPath + filename2, PdfDocumentOpenMode.Import);
+
+            outputDocument.Save(finalPath + "\\" + "test.pdf");
+
+            //outputDocument.PageLayout = PdfPageLayout.OneColumn;
+            //XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
+            //XFont font = new XFont("Times New Roman", 12, XFontStyle.Regular, options);
+            //XStringFormat format = new XStringFormat();
+
+            //format.Alignment = XStringAlignment.Center;
+            //format.LineAlignment = XLineAlignment.Far;
+
+            //XGraphics gfx;
+            //XRect box;
+
+            //int count = Math.Max(inputDocument1.PageCount, inputDocument2.PageCount);
+            //for (int idx = 0; idx < count; idx++)
+            //{
+            //    // pobranie stron z 1 dokumentu
+            //    PdfPage page1 = inputDocument1.PageCount > idx ?
+            //    inputDocument1.Pages[idx] : new PdfPage();
+            //    // pobranie stron z 2 dokumentu
+            //    PdfPage page2 = inputDocument2.PageCount > idx ?
+            //    inputDocument2.Pages[idx] : new PdfPage();
+
+            //    // połaczenie dokumentów w trzeci dokument
+            //    page1 = outputDocument.AddPage(page1);
+            //    page2 = outputDocument.AddPage(page2);
+
+            //    // Zapisz nazwę dokumentu i numer na każdej stronie
+            //    gfx = XGraphics.FromPdfPage(page1);
+            //    box = page1.MediaBox.ToXRect();
+            //    box.Inflate(0, -10);
+            //    gfx.DrawString(String.Format("{0} • {1}", filename1, idx + 1), font, XBrushes.Red, box, format);
+            //    gfx = XGraphics.FromPdfPage(page2);
+            //    box = page2.MediaBox.ToXRect();
+            //    box.Inflate(0, -10);
+            //    gfx.DrawString(String.Format("{0} • {1}", filename2, idx + 1), font, XBrushes.Red, box, format);
+            //}
+
+            //// zapis documentu
+            //const string filename = "OutFile.pdf";
+            //outputDocument.Save(filename);
+
+
+
+
+            ////Wywala błąd unicode
+            //string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+            //Console.WriteLine("startPath " + startPath);
+            //System.IO.Directory.SetCurrentDirectory(startPath);
+            //string finalPath = System.IO.Directory.GetCurrentDirectory();
+            //Console.WriteLine("finalPath " + finalPath);
+
+            //XPdfFontOptions options = new XPdfFontOptions(PdfFontEncoding.Unicode, PdfFontEmbedding.Always);
+            //string[] files = System.IO.Directory.GetFiles(finalPath, "*.pdf");
+
+            //foreach (string s in files)
+            //{
+            //    //odczytuje nazwy plików ze wskazanego folderu 
+            //    System.IO.FileInfo fi = null;
+            //    try
+            //    {
+            //        fi = new System.IO.FileInfo(s);
+            //    }
+            //    catch (System.IO.FileNotFoundException e)
+            //    {
+            //        continue;
+            //    }
+            //    //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+            //    PdfDocument outpdfDocument = new PdfDocument();
+
+            //    //nazwy plików
+            //    string fileName = fi.Name.ToString();
+            //    Console.WriteLine("fileName " + fileName);
+
+            //    PdfDocument inputpdfDocument = PdfReader.Open(s, PdfDocumentOpenMode.Import);//
+            //    // zliczenie stron
+            //    int count = inputpdfDocument.PageCount;
+            //    for (int idx = 0; idx < count; idx++)
+            //    {
+            //        PdfPage page = inputpdfDocument.Pages[idx];
+            //        outpdfDocument.AddPage(page);
+            //    }
+
+            //    //program.LoadPDFFile(fileName);
+            //    //program.Append(fileName);
+            //    //program.SavePdf(endname);
+
+            //    Console.WriteLine(" ");
+            //    outpdfDocument.Save("kopia_test.pdf");
+            //}//foreach
+
+            //zapis pdf
+            //const string endFileName = "Test.pdf";
+
+            //Process.Start(endFileName);
+
+
+
+
 
             #region Wgranie Wskazanego 1 Documentu do API
             ////WSKAZANIE Wgrania dokumentu do Api - dane do MSSerwer.
@@ -570,6 +696,110 @@ namespace nsTEST_Skanuj_to
             Console.WriteLine("uploadDocument ->" + content);// odpowiedz
             return Execute<SkApiResponse>(request);
         }//SkApiResponse
+
+
+        #region PDF
+
+        PdfDocument PdfDoc { get { return _pdfDoc; } }
+
+        public System.IO.MemoryStream PdfStream
+        {
+            get
+            {
+                MemoryStream memStream = new MemoryStream();
+                _pdfDoc.Save(memStream);
+                return memStream;
+            }
+        }//public System.IO.MemoryStream PdfStream
+
+        public void LoadPDFFile(string file)
+        {
+            _pdfDoc = new PdfDocument(file);
+
+        }//LoadPDFFile(string file)
+
+        /// <summary>
+        /// Metoda dodająca do bieżącego PDF-a strony dokumentu przekazywanego jako parametr
+        /// </summary>
+        /// <param name="path">ścieżka do dokumentu,który należy dopisać</param>
+        /// <returns>true, jeżeli wszystko ok, false w przeciwnym razie</returns>
+        public bool Append(string path)
+        {
+            if (File.Exists(path))
+            {
+                PdfDocument appendedDoc = null;
+                try
+                {
+                    appendedDoc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+                }
+                catch { return false; }
+
+                AppendPagesFromDoc(appendedDoc);
+            }
+            return true;
+        }//public bool Append(string path)
+
+        public bool Append(System.IO.Stream stream)
+        {
+            //Sprawdzenie czy plik istnieje
+            if (stream != null)
+            {
+                //Jeżeli strumien jest poprawnym Pdfem
+                PdfDocument appendedDoc = null;
+                try
+                {
+                    appendedDoc = PdfReader.Open(stream, PdfDocumentOpenMode.Import);
+                }
+                catch
+                {
+                    return false;
+                }
+
+                //Przepisać strony z nowego dokumentu
+                AppendPagesFromDoc(appendedDoc);
+            }
+            return true;
+        }//public bool Append(Stream stream)
+
+
+        /// <summary>
+        /// Dopisuje do bieżącego dokumentu przekazany dokument
+        /// </summary>
+        /// <param name="appendedDoc">dokument ze stronami do dopisania do bieżącego dokumentu.</param>
+        private void AppendPagesFromDoc(PdfDocument appendedDoc)
+        {
+            if (_pdfDoc == null)
+            {
+                //Jeżeli to jest pierwszy dodawany dokument
+                _pdfDoc = appendedDoc;
+            }
+            else
+            {
+                Console.WriteLine("Kolejny dokument do dodania.");
+                //Iteracja przez strony appendowanego dokumentu
+                for (int i = 0; i < appendedDoc.PageCount; i++)
+                {
+                    PdfPage page = appendedDoc.Pages[i];
+                    _pdfDoc.AddPage(page);
+                }
+            }
+        }//private void AppendPagesFromDoc(PdfDocument appendedDoc)
+
+        public void SavePdf(string path)
+        {
+            _pdfDoc.Save(path);
+        }//Save
+
+        public void SavePdf(System.IO.Stream stream)
+        {
+            _pdfDoc.Save(stream);
+        }
+
+
+
+
+
+        #endregion
 
         #region 2DB
 
@@ -981,7 +1211,7 @@ namespace nsTEST_Skanuj_to
                 if (_J_for_process == 0)
                 {
                     UpdateForProcessDB(idDocum);
-                    
+
                     DeleteDB(idDocum);
                     program.WriteToFile(idDocum + " -dokument " + _documentName + " wykasowany z API " + DateTime.Now);
                     program.DeleteDocument(idDocum);
@@ -1563,10 +1793,10 @@ namespace nsTEST_Skanuj_to
             _nipBuyer = data1.company.nip;//"1132602742"
 
             /*kontraktor.id 9969824data.id -> 8185910
-nazwa sprzedawcy-> "LINDSTROM" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ 9969824 NIP PL5222640524
-nazwa nabywcy-> KR GROUP SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ SPÓŁKA KOMANDYTOWA 7085933 NIP 1132602742
-uploaded_date2019-07-01 11:44:30.868114
-id ostatniego wgranego dokumentu 8185910*/
+        nazwa sprzedawcy-> "LINDSTROM" SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ 9969824 NIP PL5222640524
+        nazwa nabywcy-> KR GROUP SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ SPÓŁKA KOMANDYTOWA 7085933 NIP 1132602742
+        uploaded_date2019-07-01 11:44:30.868114
+        id ostatniego wgranego dokumentu 8185910*/
 
             request.AddQueryParameter("statusExp", _statusDoc.ToString());
 
