@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using nsSkanuj;
 using nsXml;
-using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using RestSharp;
@@ -9,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -41,7 +39,7 @@ namespace nsTEST_Skanuj_to
         public static int _J_for_process; // jeżeli 1 = do wygenerowania, 0 = wygenerowano xml
         public static string _J_uploadDate;// Data wgrania dokumentu
         public static int _J_user_id;
-        public static int _J_count_pages; // licznik stron
+        //public static int _J_count_pages; // licznik stron
 
         public static int _newIdDocument; // id nowo wgranego dokumentu
 
@@ -79,6 +77,9 @@ namespace nsTEST_Skanuj_to
         public static int _2DB_user_id;
         public static int _2DB_parent_doc_id;
         public static int _2DB_pages;
+        public static int _2DB_total_pages;
+        public static int _2DB_start_pages;
+        public static int _2DB_end_pages;
 
         //dane odczytane z db
         public static int _idDocInDB;
@@ -164,101 +165,39 @@ namespace nsTEST_Skanuj_to
         public static void Main(string[] args)
         {
             Program program = new Program();
-            //////Logowanie, uzyskanie tokenu i pobranie danych firmy.
-            //try
+            ////Logowanie, uzyskanie tokenu i pobranie danych firmy.
+            try
+            {
+                _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;//ok pobiera token.
+            }
+            catch { program.WriteToFile("Problem z uzyskaniem tokenu."); }
+            Console.WriteLine(" ");
+
+            try
+            {
+                program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
+                //Console.WriteLine("C _idUser -> " + _idUser.ToString());
+                //Console.WriteLine("C _nameUserCompany -> " + _nameUserCompany);
+                //Console.WriteLine("C _NipMyCompany -> " + _nipUserCompany);
+                Console.WriteLine(" ");
+            }
+            catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
+            Console.WriteLine(" ");
+
+            ////Wrzuca pliki z podanej lokalizacji do API
+            #region plikiDoAPI
+            //if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
             //{
-            //    _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;//ok pobiera token.
+            //    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
             //}
-            //catch { program.WriteToFile("Problem z uzyskaniem tokenu."); }
-            //Console.WriteLine(" ");
-
-            //try
-            //{
-            //    program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
-            //    //Console.WriteLine("C _idUser -> " + _idUser.ToString());
-            //    //Console.WriteLine("C _nameUserCompany -> " + _nameUserCompany);
-            //    //Console.WriteLine("C _NipMyCompany -> " + _nipUserCompany);
-            //    Console.WriteLine(" ");
-            //}
-            //catch { program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ")."); }
-            //Console.WriteLine(" ");
-
-            //////Wrzuca pliki z podanej lokalizacji do API
-            //#region plikiDoAPI
-            ////if (!System.IO.Directory.Exists(@"C:\Konektor_In\"))
-            ////{
-            ////    System.IO.Directory.CreateDirectory(@"C:\Konektor_In\");
-            ////}
-
-            //string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
-            //System.IO.Directory.SetCurrentDirectory(startPath);
-            //string finalPath = System.IO.Directory.GetCurrentDirectory();
-            //Console.WriteLine(finalPath);
-            //string[] files = System.IO.Directory.GetFiles(finalPath, "*.pdf");
-            //foreach (string s in files)
-            //{
-            //    System.IO.FileInfo fi = null;
-            //    try
-            //    {
-            //        fi = new System.IO.FileInfo(s);
-            //    }
-            //    catch (System.IO.FileNotFoundException e)
-            //    {
-            //        program.WriteToFile(e.Message + " " + finalPath + " " + DateTime.Now);
-            //        continue;
-            //    }
-            //    //program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
-            //    //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
-            //    //Wgranie dokumentu do Api - dane do MSSerwer.
-            //    try
-            //    {
-            //        string fileName = fi.Name.ToString();
-            //        string path = fi.Directory.ToString() + "/" + fileName;
-            //        program.uploadDocument(_idUser, fileName, path, _multi);
-            //        ////OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
-            //        //// Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + " _2DB_user_id " + _2DB_user_id);
-            //        //if (_notice == "") //jeżeli plik jest nowy
-            //        //{
-            //        //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-            //        //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany. Id nowego dokumentu " + _newIdDocument + ").");
-            //        //}
-            //        //else
-            //        //{
-            //        //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
-            //        //}
-            //    }//try uploadDocument
-            //    catch
-            //    {
-            //        program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ").");
-            //    }
-            //    Console.WriteLine(" ");
-            //}//foreach
-            //#endregion
-
-            ////ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
-            //program.GetDocumentList();
-
-            ////OK Generuje xml
-            //GenerateXMLFromDoc();
-
-            //LAB 
 
             string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
-            Console.WriteLine("startPath " + startPath);
             System.IO.Directory.SetCurrentDirectory(startPath);
             string finalPath = System.IO.Directory.GetCurrentDirectory();
-            string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
-
-            string[] filesPdf = System.IO.Directory.GetFiles(finalPath, "*.pdf");
-            //tworzy katalog dla pdf, jeżeli jeszcze nie został stworzony.
-            if (!System.IO.Directory.Exists(pdfPath))
+            Console.WriteLine(finalPath);
+            string[] files = System.IO.Directory.GetFiles(finalPath, "*.pdf");
+            foreach (string s in files)
             {
-                System.IO.Directory.CreateDirectory(pdfPath);
-            }
-
-            foreach (string s in filesPdf)
-            {
-                //odczytuje nazwy plików ze wskazanego folderu 
                 System.IO.FileInfo fi = null;
                 try
                 {
@@ -266,40 +205,108 @@ namespace nsTEST_Skanuj_to
                 }
                 catch (System.IO.FileNotFoundException e)
                 {
+                    program.WriteToFile(e.Message + " " + finalPath + " " + DateTime.Now);
                     continue;
                 }
-                string filename1 = fi.Name.ToString(); //dynamicznie zmieniana nazwa
-                var outputDocument = new PdfDocument();
-
-                //zapewnienie odpowiedniego kodowania pdf
-                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-                using (var stream = File.Open(finalPath + "\\" + filename1, FileMode.Open, FileAccess.Read))
+                //program.WriteToFile(DateTime.Now+ " wgrano- "  + fi.Name.ToString() + " "+ fi.Directory.ToString());
+                //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
+                //Wgranie dokumentu do Api - dane do MSSerwer.
+                try
                 {
-                    using (var reader = XPdfForm.FromStream(stream))
-                    {
-
-                    }
-                }
-                var inputDocument1 = PdfReader.Open(finalPath + "\\" + filename1, PdfDocumentOpenMode.Import);
-
-                var pg = 0;
-
-                for (pg = 0; pg < inputDocument1.Pages.Count; pg++)
+                    string fileName = fi.Name.ToString();
+                    string path = fi.Directory.ToString() + "/" + fileName;
+                    program.uploadDocument(_idUser, fileName, path, _multi);
+                    ////OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _notice)
+                    //// Console.WriteLine("C --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + " _2DB_user_id " + _2DB_user_id);
+                    //if (_notice == "") //jeżeli plik jest nowy
+                    //{
+                    //    //InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
+                    //    Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany. Id nowego dokumentu " + _newIdDocument + ").");
+                    //}
+                    //else
+                    //{
+                    //    Console.WriteLine("Plik " + _documentName + " już istnieje.");
+                    //}
+                }//try uploadDocument
+                catch
                 {
-                    outputDocument.AddPage(inputDocument1.Pages[pg]);
-                    //PdfPage page = inputpdfDocument.Pages[pg];
-                    //outpdfDocument.AddPage(page);
+                    program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _newIdDocument + " (" + DateTime.Now + ").");
                 }
-                //outputDocument.AddPage(inputDocument1.Pages[0]);
-                
-                //zapis nowego dokumentu pdf pod wskazaną lokalizację 
-                string sfilename1 = filename1.Substring(0, (filename1.Length) - 4);
-                int count = outputDocument.PageCount;
-                string filenamePDF = sfilename1 + pg + "z" + count + ".pdf";
-                outputDocument.Save(pdfPath + "\\" + filenamePDF);
-
-
+                Console.WriteLine(" ");
             }//foreach
+            #endregion
+
+            //ściągnięcie danych dla wszystkich dokumentów z jsona i zapis w dB
+            program.GetDocumentList();
+
+            ////OK Generuje xml
+            //GenerateXMLFromDoc();
+
+
+
+
+
+
+            //LAB 
+
+            //string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+            //Console.WriteLine("startPath " + startPath);
+            //System.IO.Directory.SetCurrentDirectory(startPath);
+            //string finalPath = System.IO.Directory.GetCurrentDirectory();
+            //string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
+
+            //string[] filesPdf = System.IO.Directory.GetFiles(finalPath, "*.pdf");
+            ////tworzy katalog dla pdf, jeżeli jeszcze nie został stworzony.
+            //if (!System.IO.Directory.Exists(pdfPath))
+            //{
+            //    System.IO.Directory.CreateDirectory(pdfPath);
+            //}
+
+            //foreach (string s in filesPdf)
+            //{
+            //    //odczytuje nazwy plików ze wskazanego folderu 
+            //    System.IO.FileInfo fi = null;
+            //    try
+            //    {
+            //        fi = new System.IO.FileInfo(s);
+            //    }
+            //    catch (System.IO.FileNotFoundException e)
+            //    {
+            //        continue;
+            //    }
+            //    string filename1 = fi.Name.ToString(); //dynamicznie zmieniana nazwa
+            //    var outputDocument = new PdfDocument();
+
+            //    //zapewnienie odpowiedniego kodowania pdf
+            //    System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            //    using (var stream = File.Open(finalPath + "\\" + filename1, FileMode.Open, FileAccess.Read))
+            //    {
+            //        using (var reader = XPdfForm.FromStream(stream))
+            //        {
+
+            //        }
+            //    }
+            //    var inputDocument1 = PdfReader.Open(finalPath + "\\" + filename1, PdfDocumentOpenMode.Import);
+
+
+            //    var pg = 0;
+
+            //    for (pg = 0; pg < inputDocument1.Pages.Count; pg++)
+            //    {
+            //        outputDocument.AddPage(inputDocument1.Pages[pg]);
+            //        //PdfPage page = inputpdfDocument.Pages[pg];
+            //        //outpdfDocument.AddPage(page);
+            //    }
+            //    //outputDocument.AddPage(inputDocument1.Pages[0]);
+
+            //    //zapis nowego dokumentu pdf pod wskazaną lokalizację 
+            //    string sfilename1 = filename1.Substring(0, (filename1.Length) - 4);
+            //    int count = outputDocument.PageCount;
+            //    string filenamePDF = sfilename1 + pg + "z" + count + ".pdf";
+            //    outputDocument.Save(pdfPath + "\\" + filenamePDF);
+
+
+            //}//foreach
 
 
 
@@ -932,7 +939,7 @@ namespace nsTEST_Skanuj_to
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process, count_pages) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process, @count_pages);");
+            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process);");
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
                 using (var command = new SqlCommand(sqlInsert, sqlConnection1))
@@ -946,7 +953,7 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("parent_doc_id", _J_parent_doc_id);
                     command.Parameters.AddWithValue("pages", _J_pages);
                     command.Parameters.AddWithValue("for_process", _J_for_process);
-                    command.Parameters.AddWithValue("count_pages", _J_count_pages);
+                    //command.Parameters.AddWithValue("count_pages", _J_count_pages);
                     // Console.WriteLine("InsertIntoDB() --->>>>>  " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
@@ -1055,10 +1062,7 @@ namespace nsTEST_Skanuj_to
 
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
-            // "_stateForProcess": 1, /* 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji
-            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("select a.*, 1+isnull(a.total,0) as [start], isnull(a.total,0) + a.pages as [end] from (SELECT TOP (1000)[name],[doc_id],[parent_doc_id],[pages], total = (select sum(pages) from [WgraneDoc] where parent_doc_id=p.[parent_doc_id] and [doc_id]<p.[doc_id]) FROM [skanujTo].[dbo].[WgraneDoc] p where parent_doc_id <> 0 order by doc_id asc) a;", sqlConnection);
-
-            //SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT CASE When COUNT(*)=1 then 1 Else sum(WgraneDoc.pages) end AS 'licz' FROM WgraneDoc WHERE parent_doc_id = " + _J_parent_doc_id +";", sqlConnection);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from[Nr_STRON] WHERE doc_id = " + idDoc + ";", sqlConnection);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
             sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
@@ -1066,11 +1070,14 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
+                // TODO zapis ilości stron z widoku
                 _2DB_doc_id = int.Parse(dataRow["doc_id"].ToString());
                 _2DB_name = dataRow["name"].ToString();
-                _2DB_pages = int.Parse((dataRow[@"pages"].ToString()));
                 _2DB_parent_doc_id = int.Parse((dataRow[@"parent_doc_id"].ToString()));
-                //_J_count_pages = 
+
+                _2DB_pages = int.Parse((dataRow[@"pages"].ToString()));
+                _2DB_start_pages = int.Parse((dataRow[@"start"].ToString()));
+                _2DB_end_pages = int.Parse((dataRow[@"end"].ToString()));
                 // Console.WriteLine("w DB Dokument " + _2DB_name + " ma " + _2DB_pages + " stron ");
 
                 //sprawdzenie z jsona
@@ -1281,6 +1288,10 @@ namespace nsTEST_Skanuj_to
             return Execute<List<DocumentList>>(request);
         }//GetStatusDocumentList(int idDoc)
 
+        /// <summary>
+        /// Pobiera z JSON listę dokumentów i zapisuje do bazy danych
+        /// </summary>
+        /// <returns></returns>
         public List<DocumentList> GetDocumentList()
         {
             var client = new RestClient("http://app.skanuj.to/api");
@@ -1310,8 +1321,7 @@ namespace nsTEST_Skanuj_to
                 _J_pages = data1.pages;
                 _J_for_process = 1;
                 _J_user_id = data1.user_id;
-                _J_count_pages = 1;
-
+               
                 //Console.WriteLine("DANE Z JSON -> " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                 // jeżeli _J_parent_doc_id jest NULLem wstaw 0
                 int? jparent_doc_id = (data1.parent_doc_id);
@@ -1325,7 +1335,26 @@ namespace nsTEST_Skanuj_to
                     _J_parent_doc_id = 0;
                 }
 
+
                 InsertAllIntoDB(); //OK Wgrywa wszystko z jsona.
+
+                int id_doc = _J_idDocument;
+                if (_J_parent_doc_id == 0)
+                {
+                    _J_pages = _2DB_pages;
+                   
+
+                }
+                else
+                {
+                    CountPages(id_doc);//liczy strony wg widoku
+                   
+
+                }
+                Console.WriteLine(_2DB_name + " dokument " + _2DB_doc_id + " ParentIdFromDoc " + _2DB_parent_doc_id + " strona od " + _2DB_start_pages + " do " + _2DB_end_pages);
+
+                
+
 
             }//for
 
