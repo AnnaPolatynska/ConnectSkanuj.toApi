@@ -78,8 +78,8 @@ namespace nsTEST_Skanuj_to
         public static int _2DB_parent_doc_id;
         public static int _2DB_pages;
         public static int _2DB_total_pages;
-        public static int _2DB_start_pages;
-        public static int _2DB_end_pages;
+        public static int _2DB_start_page;
+        public static int _2DB_end_page;
 
         //dane odczytane z db
         public static int _idDocInDB;
@@ -939,7 +939,7 @@ namespace nsTEST_Skanuj_to
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process);");
+            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process, start_page, end_page) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process, @start_page, @end_page);");
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
                 using (var command = new SqlCommand(sqlInsert, sqlConnection1))
@@ -953,6 +953,8 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("parent_doc_id", _J_parent_doc_id);
                     command.Parameters.AddWithValue("pages", _J_pages);
                     command.Parameters.AddWithValue("for_process", _J_for_process);
+                    command.Parameters.AddWithValue("start_page", 0);
+                    command.Parameters.AddWithValue("end_page", 0);
                     //command.Parameters.AddWithValue("count_pages", _J_count_pages);
                     // Console.WriteLine("InsertIntoDB() --->>>>>  " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                     command.ExecuteNonQuery();
@@ -984,45 +986,37 @@ namespace nsTEST_Skanuj_to
                     sqlConnection1.Close();
                 }
             }
-            Console.WriteLine("UpdateForProcessDB " + docId + " @for_process " + for_process);
         }//UpdateForProcessDB
 
 
         /// <summary>
-        /// Aktualizuje status dokumentu w bazie.
+        /// Aktualizuje numery stron dokumentu w bazie.
         /// </summary>
-        public static void UpdateStatusDocInDB()
+        public static void UpdateStronyInDB(int docId)
         {
-            Program program = new Program();
+            int start_page = int.Parse(_2DB_start_page.ToString());
+            int end_page = int.Parse(_2DB_end_page.ToString());
 
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
-            // "_stateForProcess": 1, /* 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji
-            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * FROM dbo.WgraneDoc;", sqlConnection);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
-            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
-            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            foreach (DataRow dataRow in dataTable.Rows)
+            var sqlUpdate = "UPDATE dbo.WgraneDoc SET start_page = @start_page, end_page = @end_page WHERE doc_id = " + docId + ";";
+
+            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
-                _stateDocInDB = int.Parse((dataRow[@"state"].ToString()));
-                _idDocInDB = int.Parse(dataRow["doc_id"].ToString());
-                _fileName = dataRow["name"].ToString();
-
-                program.GetStatusDocumentList(_idDocInDB);
-
-                // program.GetInfoFromDocumentList(8185917);
-                Console.WriteLine(" ");
-                //program.GetVeryficationStateByIdDoc(_idDocInDB);
-
-
-            }// foreach
-
-
-
-            sqlConnection.Close();
-        }//UpdateStatusDocInDB()
+                using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
+                {
+                    sqlConnection1.Open();
+                    command.Parameters.AddWithValue("@start_page", start_page);
+                    command.Parameters.AddWithValue("@end_page", end_page);
+                    command.ExecuteNonQuery();
+                    sqlConnection1.Close();
+                }
+            }
+            Console.WriteLine("UpdateStronyInDB " + docId + " @start_page " + start_page + " @end_page " + end_page);
+        }//UpdateForProcessDB
 
         /// <summary>
         /// aktualizuje id, parent_doc_id, strony
@@ -1070,14 +1064,14 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                // TODO zapis ilości stron z widoku
-                _2DB_doc_id = int.Parse(dataRow["doc_id"].ToString());
-                _2DB_name = dataRow["name"].ToString();
-                _2DB_parent_doc_id = int.Parse((dataRow[@"parent_doc_id"].ToString()));
+                //zapis ilości stron z widoku
+                //_2DB_doc_id = int.Parse(dataRow["doc_id"].ToString());
+                //_2DB_name = dataRow["name"].ToString();
+                //_2DB_parent_doc_id = int.Parse((dataRow[@"parent_doc_id"].ToString()));
 
-                _2DB_pages = int.Parse((dataRow[@"pages"].ToString()));
-                _2DB_start_pages = int.Parse((dataRow[@"start"].ToString()));
-                _2DB_end_pages = int.Parse((dataRow[@"end"].ToString()));
+                //_2DB_pages = int.Parse((dataRow[@"pages"].ToString()));
+                _2DB_start_page = int.Parse((dataRow[@"start"].ToString()));
+                _2DB_end_page = int.Parse((dataRow[@"end"].ToString()));
                 // Console.WriteLine("w DB Dokument " + _2DB_name + " ma " + _2DB_pages + " stron ");
 
                 //sprawdzenie z jsona
@@ -1321,7 +1315,7 @@ namespace nsTEST_Skanuj_to
                 _J_pages = data1.pages;
                 _J_for_process = 1;
                 _J_user_id = data1.user_id;
-               
+
                 //Console.WriteLine("DANE Z JSON -> " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                 // jeżeli _J_parent_doc_id jest NULLem wstaw 0
                 int? jparent_doc_id = (data1.parent_doc_id);
@@ -1335,26 +1329,21 @@ namespace nsTEST_Skanuj_to
                     _J_parent_doc_id = 0;
                 }
 
-
                 InsertAllIntoDB(); //OK Wgrywa wszystko z jsona.
-
                 int id_doc = _J_idDocument;
-                if (_J_parent_doc_id == 0)
+               
+                                             
+                if (_J_parent_doc_id != 0 || _2DB_pages > 1)
                 {
-                    _J_pages = _2DB_pages;
-                   
-
+                    CountPages(id_doc);//liczy strony wg widoku
                 }
                 else
                 {
-                    CountPages(id_doc);//liczy strony wg widoku
-                   
-
+                    _2DB_end_page = 1;
+                    _2DB_start_page = 1;
                 }
-                Console.WriteLine(_2DB_name + " dokument " + _2DB_doc_id + " ParentIdFromDoc " + _2DB_parent_doc_id + " strona od " + _2DB_start_pages + " do " + _2DB_end_pages);
-
+                UpdateStronyInDB(id_doc);// aktualizuje start i end strony 
                 
-
 
             }//for
 
