@@ -4,6 +4,60 @@ using System.Text;
 
 namespace nsSkanuj
 {
+
+    public partial class StronaPDF
+    {
+        private string NazwaDocField;
+        private int Doc_idField;
+        private int Start_pageField;
+        private int End_pageField;
+        private int PagesField;
+        private int Parent_doc_idField;
+
+        public string NazwaDoc
+        {
+            get { return NazwaDocField; }
+            set { NazwaDocField = value; }
+        }
+        public int Doc_id
+        {
+            get { return Doc_idField; }
+            set { Doc_idField = value; }
+        }
+        public int Start_page
+        {
+            get { return Start_pageField; }
+            set { Start_pageField = value; }
+        }
+        public int End_page
+        {
+            get { return End_pageField; }
+            set { End_pageField = value; }
+        }
+        public int Pages
+        {
+            get { return PagesField; }
+            set { PagesField = value; }
+        }
+        public int Parent_doc_id
+        {
+            get { return Parent_doc_idField; }
+            set { Parent_doc_idField = value; }
+        }
+
+        public StronaPDF(string NazwaDocField, int Doc_idField, int Start_pageField, int End_pageField, int PagesField, int Parent_doc_idField)
+        {
+            this.NazwaDoc = NazwaDocField;
+            this.Doc_id = Doc_idField;
+            this.Start_page = Start_pageField;
+            this.End_page = End_pageField;
+            this.Pages = PagesField;
+            this.Parent_doc_id = Parent_doc_idField;
+        }
+        public StronaPDF()
+        {
+        }
+    }
     public class Token
     {
         public string token { get; set; }

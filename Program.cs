@@ -159,6 +159,7 @@ namespace nsTEST_Skanuj_to
         public static string _rWaluta;
         public static string _rZaplacono;
         List<PozycjaXml> _listaPozycji = new List<PozycjaXml>(); //lista pozycji wyszczególnionych na fa.
+        List<StronaPDF> _stronyPDF = new List<StronaPDF>(); 
 
         public PdfDocument _pdfDoc = null;
         #endregion
@@ -249,7 +250,7 @@ namespace nsTEST_Skanuj_to
             }
 
             // po wszystkich nazwach pdf
-            foreach (string s in filesPdf)
+            foreach (string s in filesPdf)// dla każdego pliku w folderze
             {
                 //odczytuje nazwy plików ze wskazanego folderu 
                 System.IO.FileInfo fi = null;
@@ -262,8 +263,8 @@ namespace nsTEST_Skanuj_to
                     continue;
                 }
                 string filename1 = fi.Name.ToString(); //dynamicznie zmieniana nazwa
-               
-                var outputDocument = new PdfDocument();
+
+                
 
                 //zapewnienie odpowiedniego kodowania pdf
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
@@ -277,45 +278,40 @@ namespace nsTEST_Skanuj_to
                 var inputDocument1 = PdfReader.Open(finalPath + "\\" + filename1, PdfDocumentOpenMode.Import);
 
                 string sfilename1 = filename1.Substring(0, (filename1.Length) - 4);
+                program.SelectPages(sfilename1);// zapisuje do tabeli ilości stron dla szukanej nazwy dokumentu
 
-                program.SelectPages(sfilename1);
-                Console.WriteLine("CW id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
-
-                var pg = 0;
-                
-                for (pg = (_2DB_start_page - 1); pg <= (_2DB_end_page-1); pg++)
+                foreach (StronaPDF strona in program._stronyPDF)
                 {
-                    outputDocument.AddPage(inputDocument1.Pages[pg]);
-                    //PdfPage page = inputpdfDocument.Pages[pg];
-                    //outpdfDocument.AddPage(page);
+                    int count = inputDocument1.PageCount;
+                    string filenamePDF = sfilename1 + "(" + strona.Start_page + "-" + strona.End_page + ")z" + count + ".pdf";
+
+                    int indEnd = strona.End_page - 1;
+                    int indStart = strona.Start_page - 1;
+                    int str = strona.End_page - strona.Start_page;
+
+                    Console.WriteLine(str +" poza for OK " + strona.NazwaDoc + " id " + strona.Doc_id + " start " + strona.Start_page + " end " + strona.End_page);
+                    if (str == 0)
+                    {
+                        var outputDocument = new PdfDocument();
+                        int ind = strona.End_page - 1;
+                        outputDocument.AddPage(inputDocument1.Pages[ind]);
+                        outputDocument.Save(pdfPath + "\\" + filenamePDF);
+                    }
+                    else if (str != 0)
+                    {
+                        var outputDocument = new PdfDocument();
+                        
+                        var pg = 0;
+                        for (pg = (indStart); pg <= (indEnd); pg++)
+                        {
+                            outputDocument.AddPage(inputDocument1.Pages[pg]);
+                            Console.WriteLine(" for " + _2DB_name + " id " + _2DB_doc_id + " start " + _2DB_start_page + " end " + _2DB_end_page);
+                        }
+
+                        outputDocument.Save(pdfPath + "\\" + filenamePDF);
+                    }
+
                 }
-
-                //if (_2DB_parent_doc_id != 0 || _2DB_pages > 1) //wielostronicowe
-                //{
-                //    //for (pg = (_2DB_start_page - 1); pg < inputDocument1.Pages.Count; pg++)
-
-                //    for (pg = (_2DB_start_page - 1); pg < inputDocument1.Pages.Count; pg++)
-                //    {
-
-
-
-                //        outputDocument.AddPage(inputDocument1.Pages[pg]);
-                //        //PdfPage page = inputpdfDocument.Pages[pg];
-                //        //outpdfDocument.AddPage(page);
-                //    }
-                //}
-                //else
-                //{
-                //    _2DB_start_page = 1;
-                //    _2DB_end_page = 1;
-                //    outputDocument.AddPage(inputDocument1.Pages[0]);//dodanie strony o wybranym indeksie.
-                //}
-
-                //zapis nowego dokumentu pdf pod wskazaną lokalizację 
-                
-                int count = outputDocument.PageCount;
-                string filenamePDF = sfilename1 + "(" + _2DB_start_page + "-" + _2DB_end_page + ")" + "z" + _2DB_pages + ".pdf";
-                outputDocument.Save(pdfPath + "\\" + filenamePDF);
 
             }//foreach
 
@@ -1062,6 +1058,7 @@ namespace nsTEST_Skanuj_to
             sqlConnection.Close();
         }//UpdateInfoDocInDB()
 
+
         /// <summary>
         /// Odczytuje dane dokumentu z tabeli w bazie.
         /// </summary>
@@ -1086,11 +1083,56 @@ namespace nsTEST_Skanuj_to
                 _2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
                 _2DB_end_page = int.Parse(dataRow[@"end_page"].ToString());
 
-                Console.WriteLine(_2DB_name +"id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
-            }
+                var strona = new nsSkanuj.StronaPDF();
+                strona.Doc_id = _2DB_doc_id;
+                strona.NazwaDoc = _2DB_name.ToString();
+                strona.Start_page = _2DB_start_page;
+                strona.End_page = _2DB_end_page;
+                strona.Parent_doc_id = _2DB_parent_doc_id;
+                strona.Pages = _2DB_pages;
+
+                _stronyPDF.Add(new StronaPDF(strona.NazwaDoc, strona.Doc_id, strona.Start_page, strona.End_page, strona.Pages, strona.Parent_doc_id));
+                //Console.WriteLine("SelectPages(string nazwaDoc) " + _2DB_name + "id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
+            }//foreach
+
         }//SelectPages(int idDoc)
 
 
+        public void Select(int idDoc)
+        {
+            Program program = new Program();
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc WHERE doc_id = " + idDoc + ";", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                _2DB_name = (dataRow[@"name"].ToString());
+                _2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
+                _2DB_parent_doc_id = int.Parse(dataRow[@"parent_doc_id"].ToString());
+                _2DB_pages = int.Parse(dataRow[@"pages"].ToString());
+                _2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
+                _2DB_end_page = int.Parse(dataRow[@"end_page"].ToString());
+
+                Console.WriteLine("Select id " +_2DB_name + "id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
+
+                var strona = new nsSkanuj.StronaPDF();
+                strona.Doc_id = _2DB_doc_id;
+                strona.NazwaDoc = _2DB_name.ToString();
+                strona.Start_page = _2DB_start_page;
+                strona.End_page = _2DB_end_page;
+                strona.Parent_doc_id = _2DB_parent_doc_id;
+                strona.Pages = _2DB_pages;
+
+                _stronyPDF.Add(new StronaPDF(strona.NazwaDoc, strona.Doc_id, strona.Start_page, strona.End_page, strona.Pages, strona.Parent_doc_id));
+
+            }
+
+        }//SelectPages(int idDoc)
         public static void CountPages(int idDoc)
         {
             Program program = new Program();

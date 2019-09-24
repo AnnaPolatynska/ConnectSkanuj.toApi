@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace nsXml
+﻿namespace nsXml
 {
+
     public partial class PozycjaXml
     {
         private string IdProductField;
