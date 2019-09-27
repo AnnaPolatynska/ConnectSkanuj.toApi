@@ -289,13 +289,7 @@ namespace nsTEST_Skanuj_to
                     Console.WriteLine(str + " poza for OK " + strona.NazwaDoc + " id " + strona.Doc_id + " start " + strona.Start_page + " end " + strona.End_page);
                     try
                     {
-                        if (str == 0)
-                        {
-                            var outputDocument = new PdfDocument();
-                            outputDocument.AddPage(inputDocument1.Pages[indStart]);
-                            outputDocument.Save(pdfPath + "\\" + filenamePDF);
-                        }
-                        else if (str > 0)
+                        if (str > 0)
                         {
                             var outputDocument = new PdfDocument();
 
@@ -308,8 +302,14 @@ namespace nsTEST_Skanuj_to
 
                             outputDocument.Save(pdfPath + "\\" + filenamePDF);
                         }
+                        else
+                        {
+                            var outputDocument = new PdfDocument();
+                            outputDocument.AddPage(inputDocument1.Pages[indEnd]);
+                            outputDocument.Save(pdfPath + "\\" + filenamePDF);
+                        }
                     }
-                    catch { program.WriteToFile("problem z podziałem stron dla dokumentu " + filename1 + " o id "+ _2DB_doc_id + " ilość stron start " + _2DB_start_page + " end " + _2DB_end_page); }
+                    catch {  }
 
                 }
 
