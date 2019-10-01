@@ -27,11 +27,9 @@ namespace nsTEST_Skanuj_to
         #region _ogólnodostępne
         //private string _endFileName = System.Configuration.ConfigurationManager.AppSettings["finalPath"].ToString();
         static bool _multi = false; //multipages True - powoduje analizę rozbicia dokumentów.Domyślnie false.
-
         public static string _connString = System.Configuration.ConfigurationManager.ConnectionStrings["ConnectionSQL"].ConnectionString;
         public static int _idDocument; //id dokumentu do pobrania 8185910
         static string _fileName;
-
         public static int _J_idDocument;
         public static int _J_parent_doc_id;
         public static int _J_pages;//wielostronicowy
@@ -41,35 +39,27 @@ namespace nsTEST_Skanuj_to
         public static string _J_uploadDate;// Data wgrania dokumentu
         public static int _J_user_id;
         //public static int _J_count_pages; // licznik stron
-
         public static int _newIdDocument; // id nowo wgranego dokumentu
-
         public static string _documentName; //nazwa wgranego dokumentu
-
         public static string _notice;
-
         //user
         public static string _tokenS; //token połączenia
         public static int _idUser; // id firmy wgrywającej dane = KRGroup: 7082762
         public static int _nipUserCompany; //Nip kr group
         public static string _nameUserCompany;
-
         public string _companyName;
         //buyer
         public static string _nipBuyer; //nip nabywcy 
         public static string _nameBuyer; //nazwa nabywcy
         public static int _idBuyer; //id nabywcy
         public static string _adressBuyer; // adres nabywcy
-
         //Contraktor
         public static string _nipContractor; //nip sprzedawcy
         public static int _idContractor;//id firmy z dokumentu do pobrania
         public static string _nameContractor; //nazwa firmy z dokumentu
         //public static string _adressContractor;// adres sprzedawcy
         public static int _statusDoc = 0; //statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
-
         public static int _stateForProcess; // status dokumentu w bazie
-
         //2DB
         public static int _2DB_doc_id;
         public static string _2DB_name;
@@ -81,11 +71,9 @@ namespace nsTEST_Skanuj_to
         public static int _2DB_total_pages;
         public static int _2DB_start_page;
         public static int _2DB_end_page;
-
         //dane odczytane z db
         public static int _idDocInDB;
         public static int _stateDocInDB;
-
         //dane do xml
         public static string _BruttoWalutaPodstawowa;
         public static string _CategoryDesc;
@@ -159,7 +147,6 @@ namespace nsTEST_Skanuj_to
         public static string _rZaplacono;
         List<PozycjaXml> _listaPozycji = new List<PozycjaXml>(); //lista pozycji wyszczególnionych na fa.
         List<StronaPDF> _stronyPDF = new List<StronaPDF>();
-
         public PdfDocument _pdfDoc = null;
        
         #endregion
