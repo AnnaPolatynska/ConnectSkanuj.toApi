@@ -221,10 +221,8 @@ namespace nsTEST_Skanuj_to
 
             program.Select();
 
-            //program.SelectPages(sfilename1);// zapisuje do tabeli ilości stron dla szukanej nazwy dokumentu
-            //int id = _2DB_doc_id;
-            //program.SelectPages_Id(id);
-            program.CuttingPDF();//tnie pdf na stony
+            //tnie pdf na stony i zapisuje w katalogu pdf
+            program.CuttingPDF();
 
             GenerateXMLFromDoc();  ////OK Generuje xml
 
@@ -685,17 +683,17 @@ namespace nsTEST_Skanuj_to
                 foreach (StronaPDF strona in _stronyPDF)
                 {
                     //int count = inputDocument1.PageCount;
-                    int countDB = strona.Pages;
+                    //int countDB = strona.Pages;
                     //int koniec = 0;
-                    //if (strona.End_page <= count)
+                    //if (strona.End_page <= countDB)
                     //{
-                    //    koniec = count;
+                    //    koniec = countDB;
                     //}
                     //else
                     //{
                     //    koniec = strona.End_page;
                     //}
-                    string filenamePDF = strona.NazwaDoc + "(" + strona.Start_page + "-" + strona.End_page + ")z" + strona.Pages + ".pdf";
+                    string filenamePDF = strona.NazwaDoc + "(" + strona.Start_page + "-" + strona.End_page + ").pdf";
 
                     int indEnd = strona.End_page - 1;
                     int indStart = strona.Start_page - 1;
@@ -1436,44 +1434,45 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                int idDocum = int.Parse(dataRow["doc_id"].ToString());
-                _documentName = dataRow["name"].ToString();
-                _J_parent_doc_id = int.Parse(dataRow["parent_doc_id"].ToString());
-                _J_pages = int.Parse(dataRow["pages"].ToString());
+                int idDoc = int.Parse(dataRow["doc_id"].ToString());
+                string nameDoc = dataRow["name"].ToString();
+                int parent_Doc_id = int.Parse(dataRow["parent_doc_id"].ToString());
+                int totalpages = int.Parse(dataRow["pages"].ToString());
+                int startpage = int.Parse(dataRow["start_page"].ToString());
+                int endpage = int.Parse(dataRow["end_page"].ToString());
+
                 _J_for_process = 0;
                 try
                 {
-                    program.GetDataFromDoc(idDocum); //OK pobiera dane z dokumentu o podanym id
+                    program.GetDataFromDoc(idDoc); //OK pobiera dane z dokumentu o podanym id
                 }
-                catch { program.WriteToFile(DateTime.Now + "GetDataFromDoc -> nie istnieje dokument o podanym id " + idDocum); }
+                catch { program.WriteToFile(DateTime.Now + "GetDataFromDoc -> nie istnieje dokument o podanym id " + idDoc); }
                 Console.WriteLine(" ");
                 try
                 {
-                    program.FillPositionFromDocToXml(idDocum);//OK wgrywa poszczególne pozycję z fa do xml.
-                    Console.WriteLine(DateTime.Now + " FillPositionFromDocToXml -> wgrano dane do XML z API dla dokumentu " + idDocum);
+                    program.FillPositionFromDocToXml(idDoc);//OK wgrywa poszczególne pozycję z fa do xml.
+                    Console.WriteLine(DateTime.Now + " FillPositionFromDocToXml -> wgrano dane do XML z API dla dokumentu " + idDoc);
                 }
+                catch { Console.WriteLine(DateTime.Now + " FillPositionFromDocToXml -> problem z pobraniem danych z API dotyczy dokumentu " + idDoc); }
 
-                catch { Console.WriteLine(DateTime.Now + " FillPositionFromDocToXml -> problem z pobraniem danych z API dotyczy dokumentu " + idDocum); }
-
-
-
-                program.CreateXML();//OK zapis danych do xml
+                program.CreateXML(nameDoc, startpage, endpage);//OK zapis danych do xml
 
                 //odhaczenie pliku, z którego wygenerowano xml => czy wykasować plik z API
 
                 if (_J_for_process == 0)
                 {
-                    UpdateForProcessDB(idDocum);
+
                     // TODO odblokować  DeleteDB(idDocum);
 
                     // TODO odblokować wykasowanie dokumentów z API     program.DeleteDocument(idDocum);
+                    UpdateForProcessDB(idDoc);
                 }
                 else
                 {
-                    UpdateForProcessDB(idDocum);
+                    UpdateForProcessDB(idDoc);
                 }
 
-                _idDocument = idDocum;
+                _idDocument = idDoc;
             }// foreach
 
             sqlConnection.Close();
@@ -3079,7 +3078,7 @@ namespace nsTEST_Skanuj_to
         /// Tworzy strukturę xml.
         /// </summary>
         /// <param name="filepath"></param>
-        public void CreateXML()
+        public void CreateXML(string name, int start, int end)
         {
             XDocument xml = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"),
@@ -3144,10 +3143,10 @@ namespace nsTEST_Skanuj_to
                 )
                 ))));
 
-            string longnazwa = _documentName.ToString().Replace('/', '_');
-            string nazwa = longnazwa.Substring(0, longnazwa.Length - 4);
+            //string longnazwa = _documentName.ToString().Replace('/', '_');
+            //string nazwa = longnazwa.Substring(0, longnazwa.Length - 4);
 
-            string filename = nazwa + "_" + _idDocument + ".txt";
+            string filename = name + "(" + start +"-"+ end + ").txt";
 
             string endpath = System.Configuration.ConfigurationManager.AppSettings["endPath"].ToString();
             if (!System.IO.Directory.Exists(endpath))
