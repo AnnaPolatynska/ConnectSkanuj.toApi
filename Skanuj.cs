@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace nsSkanuj
 {
@@ -13,6 +12,8 @@ namespace nsSkanuj
         private int End_pageField;
         private int PagesField;
         private int Parent_doc_idField;
+        private int StateField;
+        private string Uploaded_dateField;
 
         public string NazwaDoc
         {
@@ -44,8 +45,19 @@ namespace nsSkanuj
             get { return Parent_doc_idField; }
             set { Parent_doc_idField = value; }
         }
+        public int State
+        {
+            get { return StateField; }
+            set { StateField = value; }
+        }
+        public string Uploaded_date
+        {
+            get { return Uploaded_dateField; }
+            set { Uploaded_dateField = value; }
+        }
 
-        public StronaPDF(string NazwaDocField, int Doc_idField, int Start_pageField, int End_pageField, int PagesField, int Parent_doc_idField)
+
+        public StronaPDF(string NazwaDocField, int Doc_idField, int Start_pageField, int End_pageField, int PagesField, int Parent_doc_idField, int StateField, string Uploaded_dateField)
         {
             this.NazwaDoc = NazwaDocField;
             this.Doc_id = Doc_idField;
@@ -53,6 +65,7 @@ namespace nsSkanuj
             this.End_page = End_pageField;
             this.Pages = PagesField;
             this.Parent_doc_id = Parent_doc_idField;
+            this.State = StateField;
         }
         public StronaPDF()
         {
