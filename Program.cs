@@ -78,6 +78,19 @@ namespace nsTEST_Skanuj_to
         public static int _idDocInDB;
         public static int _stateDocInDB;
         //dane do xml
+        public static string _IdProduct;
+        public static string _Product_code;
+        public static string _Nazwa;
+        public static double _Ilosc;
+        public static string _Jednostka;
+        public static double _Cena;
+        public static double _Brutto;
+        public static double _Netto;
+        public static int _StawkaVAT;
+        public static double _VAT;
+        public static int _Validation;
+
+
         public static string _BruttoWalutaPodstawowa;
         public static string _CategoryDesc;
         public static string _CzyNieKompletnaPozycja;
@@ -163,13 +176,13 @@ namespace nsTEST_Skanuj_to
             {
                 _tokenS = program.GetToken("w.radzikowski@krgroup.pl", "5cfa2f8d51092").token;//ok pobiera token.
             }
-            catch { /*program.WriteToFile("Problem z uzyskaniem tokenu.");*/ }
+            catch { program.WriteToFile(DateTime.Now + " Problem z uzyskaniem tokenu."); }
 
             try
             {
                 program.getUserCompany();//ok Pobranie danych firmy własnej id user(kr group) 7085933
             }
-            catch { /*program.WriteToFile("Problem z pobraniem firmy " + _idUser + " - " + _nameUserCompany + " (" + DateTime.Now + ").");*/ }
+            catch { program.WriteToFile(DateTime.Now + " Problem z pobraniem firmy użytkownika " + _idUser + " - " + _nameUserCompany); }
             Console.WriteLine(" ");
 
             ////Wrzuca pliki z podanej lokalizacji do API
@@ -195,7 +208,7 @@ namespace nsTEST_Skanuj_to
                 }
                 catch (System.IO.FileNotFoundException e)
                 {
-                    //program.WriteToFile(DateTime.Now + " " + e.Message + " - " + startPath);
+                    program.WriteToFile(DateTime.Now + " " + e.Message + " - " + startPath);
                     continue;
                 }
                 //Console.WriteLine("Pliki: {0} : {1}", fi.Name, fi.Directory);
@@ -222,233 +235,58 @@ namespace nsTEST_Skanuj_to
             //OK pobiera listę gotowych dokumentów dla wszystkich dokumentów z jsona i zapis w dB
             program.GetDocumentList();
 
-            program.SelectDataIntoTable();
+            program.CuttingPDF(); // OK tnie pdf o statusie innym niż 0 i 1 dla pozostałych generuje error do DB
 
+            program.GenerateXMLFromDoc();  //OK Generuje xml
 
-            if (_2DB_state != 0)
-            {
-                //tnie pdf na stony i zapisuje w katalogu pdf
-                program.CuttingPDF();
-
-                GenerateXMLFromDoc();  ////OK Generuje xml
-            }
-            else
-            {
-                program.WriteToFile(DateTime.Now + " Dokument " + _2DB_name + " jest przetwarzany przez API.");
-            }
 
             program.SelectError(_2DB_name);
 
-            if (_2DB_error >= 3)
-            {
-                string pdf_file = (_2DB_name + ".pdf").ToString();
-                string pdfFile = pdf_file;
-                //tworzy katalog dla błędnych plików
-                string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
-                if (!System.IO.Directory.Exists(errorPath))
-                {
-                    System.IO.Directory.CreateDirectory(errorPath);
-                }
-
-                string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
-                string errorFile = System.IO.Path.Combine(errorPath, "error_" + pdfFile);
-
-                if (System.IO.Directory.Exists(startPath))
-                {
-                    string[] error_files = System.IO.Directory.GetFiles(startPath);
-
-                    foreach (string e in error_files)
-                    {
-                        pdfFile = Path.GetFileName(e);
-                        errorFile = Path.Combine(errorPath, "error_" + pdfFile);
-                        System.IO.File.Copy(e, errorFile, true);
-
-
-                    }
-                    System.IO.FileInfo fi = new FileInfo(startPath + pdfFile);
-
-                    try
-                    {
-                        fi.Delete();
-                    }
-                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
-                }
-                else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje."); }
-
-
-
-
-
-
-
-
-                program.WriteToFile(DateTime.Now + " API nie jeste w stanie rozpoznać skanu " + _2DB_name + " . Program zaprzestał dalszego przetwarzania.");
-            }
-            else { }
-
-
-
-
-            //LAB 
-
-            #region Wgranie wskazanego 1 Documentu do API
-            ////WSKAZANIE Wgrania dokumentu do Api - dane do MSSerwer.
-            //try
+            //if (_2DB_error >= 3)
             //{
-
-            //    program.uploadDocument(_idUser, _fileName, _path, _multi); //OK Wgranie dokumentu zwraca(_idDocument, _documentName, _2DB_state, _2DB_uploaded_date, _2DB_user_id, _2DB_validated, _notice)
-            //    Console.WriteLine("notice " + _notice);
-            //    Console.WriteLine("C _idDocument -> " + _idDocument.ToString() + " nazwa " + _documentName.ToString());
-
-
-            //    if (_notice == "") //jeżeli plik jest nowy
+            //    string pdf_file = (_2DB_name + ".pdf").ToString();
+            //    string pdfFile = pdf_file;
+            //    //tworzy katalog dla błędnych plików
+            //    string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
+            //    if (!System.IO.Directory.Exists(errorPath))
             //    {
-            //        InsertIntoDB();//OK zapisuje do bazy dane nowego dokumentu do śledzenia.
-
-            //        Console.WriteLine("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
-            //        //program.WriteToFile("Plik o nazwie " + _documentName + " został poprawnie dodany (" + _uploadDate + "). Id dokumentu " + _idDocument + ").");
+            //        System.IO.Directory.CreateDirectory(errorPath);
             //    }
-            //    else
+
+            //    //string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
+            //    //string errorFile = System.IO.Path.Combine(errorPath, pdfFile);
+
+            //    if (System.IO.Directory.Exists(startPath))
             //    {
-            //        Console.WriteLine("Plik już istnieje.");
+            //        string[] error_files = System.IO.Directory.GetFiles(startPath);
+
+            //        foreach (string e in error_files)
+            //        {
+            //            program.Select_3_Error();
+
+            //            pdfFile = Path.GetFileName(e);
+            //            string errorFile = Path.Combine(errorPath, pdfFile);
+            //            System.IO.File.Copy(e, errorFile, true);
+
+            //        }
+
+
+            //        System.IO.FileInfo fi = new FileInfo(startPath + pdfFile);
+            //        try
+            //        {
+            //            fi.Delete();
+            //        }
+            //        catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
             //    }
-            //}//try uploadDocument
-            //catch { program.WriteToFile("Problem z wgraniem dokumentu " + _documentName + " - " + _idDocument + " (" + DateTime.Now + ")."); }
-            #endregion
-            //Console.WriteLine(" ");
-
-            //sprawdzenie statusu dokumentów i aktualizacja w bazie.
-            //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-
-            //UpdateStatusAllDocInDB();//OK Odczyt statusu Dokumentu z DB oraz jego aktualizacja w bazie po zmianie w json.
-
-            //int badanyDoc = 8492820;
-            //Console.WriteLine("Badany doc -> " + badanyDoc);
-            //try
-            //{
-            //    program.GetDataFromDoc(badanyDoc); //OK pobiera dane z dokumentu o podanym id
+            //    else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje."); }
+            //    program.WriteToFile(DateTime.Now + " API nie jeste w stanie rozpoznać skanu " + _2DB_name + " . Program zaprzestał dalszego przetwarzania.");
             //}
-            //catch { Console.WriteLine("nie istnieje dokument o podanym id " + badanyDoc); }
-            //Console.WriteLine(" ");
-            //program.FillPositionFromDocToXml(badanyDoc);//OK wgrywa poszczególne pozycję z fa do xml.
-            //Console.WriteLine(" ");
-            //program.CreateXML();//OK zapis danych do xml
+            //else { }
 
-            //int doc_id = 1234;
-            //DeleteDB(doc_id); //OK Kasuje dane dokumentu po jego id.
-
-            //UpdateStateDB(doc_id); //OK aktualizuje dane statusu dokumentu i validacji po id dokumentu
-
-
-            //OK sprawdz czy dokument ma statusExp - statusExp atrybutu (0 - nie wymagający weryfikacji, 1 - wymagający weryfikacji, 2 - zweryfikowany)
-            //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-
-            //program.WriteInfoToFile(badanyDoc);
-
-
-            //program.GetVeryficationStateByIdDoc(badanyDoc); // stateDoc dokumentu o podanym id
-            Console.WriteLine(" ");
-
-            //AktualizujStateInDB();////Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-
-            // FindStatusInDB(8401183); //OK sprawdza w Bazie status dokumentu o podanym id
-            //Console.WriteLine(" FindStatusInDB - stateDoc => " + _stateForProcess);
-            Console.WriteLine(" ");
+            program.Select_3_Error();
 
 
 
-
-
-            ////////////Porównuje status dokumentów
-            //////////int idDocTEST = badanyDoc;//8401183;
-            //////////int stateFPTEST = _statusDoc;//1;
-            //////////int validTEST = 0;
-            //////////if (stateDoc.ToString() == _stateForProcess.ToString())
-            //////////{
-            //////////    Console.WriteLine("Procesy są takie same. Status w bazie " + stateDoc.ToString() + " process " + _stateForProcess.ToString());
-            //////////}
-            //////////else
-            //////////{
-            //////////    Console.WriteLine("Procesy się różnią " + stateDoc.ToString() + " process " + _stateForProcess.ToString());
-            //////////    AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
-            //////////}
-            //Console.WriteLine(" ");
-
-            // AktualizujStatusDoc(idDocTEST, stateFPTEST, validTEST);
-
-            //program.GetDataFromDoc(8492820);
-
-
-
-
-            //_documentName = "3TEST.JPG";
-            //program.GetIdDocByName( _documentName);
-            //program.GetExportStatusByIdDoc(badanyDoc); // Sprawdza status dokumentu
-            //TODO program.SetDocumentExportStatus(1, badanyDoc);
-
-            // program.GetAllDocumentList();//OK sprawdza statusExp dokumentów
-            // Console.WriteLine(" ");
-
-            //Console.WriteLine(" ");
-            //program.GetStateDocumentList(3); // Lista dokumentów gotowych do pobrania
-            //Console.WriteLine(" ");
-
-            //program.ListIdToVeryfication(stateDoc); //TODO lista znajduje wszystko
-
-            //int doc = 8185917;
-            //program.GetInfoIfDocumentExist(doc); //ok Lista pobiera dane o stanie wszystkich dokumentów
-
-
-            // Console.WriteLine(" ");
-            //_idUser = 8185903;
-            //_documentName = "FV_30.PDF"; //id doc 8185904
-
-            //program.GetIdListByCmpID(_idUser, _documentName); //lista po id company
-
-            //////////Pobiera dane dokumentu po id
-            ////////try
-            ////////{
-            ////////    program.GetDocumentById(badanyDoc); //ok zwraca dane dokumentu o ile dokument jest wgrany 
-            ////////    Console.WriteLine("_idContractor ->" + _idContractor + " nazwa: " + _nameContractor + " NIP sprzedawcy: " + _nipContractor + " adres " + _adressContractor);
-            ////////    Console.WriteLine("idBuyer -> " + _idBuyer + " nazwa " + _nameBuyer + " nip " + _nipBuyer + " adres " + _adressBuyer);
-            ////////    Console.WriteLine("GetDocumentById(" + _idDocument + ")" + " nazwa dokumentu -> " + _documentName);
-            ////////}
-            ////////catch { Console.WriteLine("Nie można pobrać danych dokumentu " + _idDocument + " nazwa dokumentu-> " + _documentName + "."); }
-            ////////Console.WriteLine(" ");
-
-            // program.GetDocumentsListByCmpID(_idUser);
-            // Console.WriteLine(" ");
-            // program.GetIdList(_idUser);
-            // Console.WriteLine(" ");
-
-            // program.GetLastIdDocumentFromList(); //OK pobiera dane z ostatniego wgranego dokumentu z listy
-            // Console.WriteLine("nazwa sprzedawcy -> " + _nameContractor + " id " + _idContractor + " NIP " + _nipContractor);
-            // Console.WriteLine("nazwa nabywcy -> " + _nameBuyer + " id " + _idBuyer + " NIP " + _nipBuyer);
-            // Console.WriteLine("id ostatniego wgranego dokumentu " + _idDocument);
-            // Console.WriteLine(" ");
-
-
-            //program.GetExportedDocumentList(_statusDoc);// dokumenty wyeksportowane
-
-            // program.GetDocumentByContractorNip(_nipContractor);
-            // Console.WriteLine(" ");
-
-
-
-            // Console.WriteLine("wejście dla _idUser " + _idUser.ToString()); //company_id 7085933 data.id-> 8185904
-            // program.GetStatusDocumentList(_idUser);
-            // Console.WriteLine(" ");
-
-            //// program.getDocumentId(_idUser, _fileName, _path, _multi); //ok pobiera dane z tabeli wgranych dokumentów
-
-            // Console.WriteLine("getDocumentId()" + _idDocument.ToString());//id dokumentu
-            // Console.WriteLine(" ");
-
-
-            int idDocToDelete = 8354510;
-            //program.DeleteDocument(idDocToDelete); //Ok kasuje wskazany dokument
-            //Console.WriteLine(" ");
-            //////////////program.addCompanies();//dodaje do firmy kontrahentów
 
         }//Main
 
@@ -593,13 +431,17 @@ namespace nsTEST_Skanuj_to
 
         #region PDF
 
-
+        /// <summary>
+        /// Tnie pdf na poszczególne faktury
+        /// </summary>
         public void CuttingPDF()
         {
+            Program program = new Program();
             // Pocięcie istniejącego pdf na pojedyńcze faktury
             string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
             string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
             string[] filesPdf = System.IO.Directory.GetFiles(startPath, "*.pdf");
+
 
             // po wszystkich nazwach pdf
             foreach (string p in filesPdf)// dla każdego pliku w folderze
@@ -615,9 +457,8 @@ namespace nsTEST_Skanuj_to
                     continue;
                 }
                 string filename1 = file.Name.ToString(); //dynamicznie zmieniana nazwa
-
-                //zapewnienie odpowiedniego kodowania pdf
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
                 using (var stream = File.Open(startPath + "\\" + filename1, FileMode.Open, FileAccess.Read))
                 {
                     using (var reader = XPdfForm.FromStream(stream))
@@ -626,59 +467,14 @@ namespace nsTEST_Skanuj_to
                 var inputDocument1 = PdfReader.Open(startPath + "\\" + filename1, PdfDocumentOpenMode.Import);
 
                 string sfilename1 = filename1.Substring(0, (filename1.Length) - 4);
-                //SelectPages(sfilename1);// zapisuje do tabeli ilości stron dla szukanej nazwy dokumentu
 
-                foreach (StronaPDF strona in _stronyPDF)
-                {
-                    string filenamePDF = strona.NazwaDoc + "(" + strona.Start_page + "-" + strona.End_page + ").pdf";
+                program.SelectPages_Id(sfilename1);
 
-                    int indEnd = strona.End_page - 1;
-                    int indStart = strona.Start_page - 1;
-                    int str = strona.End_page - strona.Start_page;
-
-                    var outputDocument = new PdfDocument();
-                    //Stan: 0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
-                    if (strona.State == 2 || strona.State == 3 || strona.State == 4)
-                    {
-                        if (strona.End_page == 1)
-                        {
-                            outputDocument.AddPage(inputDocument1.Pages[indEnd]);
-                            outputDocument.Save(pdfPath + "\\" + filenamePDF);
-                        }
-                        else
-                        {
-                            var pg = 0;
-                            try
-                            {
-                                for (pg = (indStart); pg <= (indEnd); pg++)
-                                {
-                                    outputDocument.AddPage(inputDocument1.Pages[pg]);
-                                }
-                            }
-                            catch { goto Koniec; }
-                            outputDocument.Save(pdfPath + "\\" + filenamePDF);
-                        }
-                    Koniec:;
-                    }
-                    else if (strona.State == 0)
-                    {
-                        Console.WriteLine(filenamePDF + "  status 0 dodany do api zaprzestano dalszego przetwarzania ");
-                        //usunąć z bazy plik o statusie 1
-                        //DeleteDB(strona.Doc_id);
-                    }
-                    else if (strona.State == 1)
-                    {
-                        Console.WriteLine(filenamePDF + "  status 1 w przetwarzaniu ");
-                    }
-
-                }//foreach
-
-                WriteToFile("Utworzono pdf o nazwie " + filename1);
-            }//foreach
+            }
         }//CuttingPDF()
 
-
         PdfDocument PdfDoc { get { return _pdfDoc; } }
+
 
         public System.IO.MemoryStream PdfStream
         {
@@ -892,7 +688,7 @@ namespace nsTEST_Skanuj_to
             Console.WriteLine("UpdatePagesDB " + docId + " pages " + pages);
         }//UpdateParentIdDB(string docName)
 
-        public static void UpdateErrorDB(string docName)
+        public void UpdateErrorDB(string docName)
         {
 
             int error = (_2DB_error + 1);
@@ -944,8 +740,6 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("@pages", pages);
                     command.Parameters.AddWithValue("@parent_doc_id", parent_doc_id);
                     command.Parameters.AddWithValue("@state", state);
-                    //command.Parameters.AddWithValue("@name", nazwaDoc);
-                    Console.WriteLine("UpdateDataInDB(string nazwaDoc) " + idDoc + " nazwa " + _J_nameDoc + " parent " + parent_doc_id + " pages " + pages);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
                 }
@@ -983,7 +777,6 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("@name", nazwaDoc);
                     command.Parameters.AddWithValue("@for_process", true);
                     command.Parameters.AddWithValue("@error", error);
-                    Console.WriteLine("UpdateDataInDB(string nazwaDoc) " + id_Doc + " nazwa " + _J_nameDoc + " parent " + parent_doc_id + " pages " + pages);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
                 }
@@ -1206,6 +999,7 @@ namespace nsTEST_Skanuj_to
                 _2DB_state = int.Parse(dataRow[@"state"].ToString());
                 _2DB_uploaded_date = dataRow[@"uploaded_date"].ToString();
                 _2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
+                _2DB_error = int.Parse(dataRow[@"error"].ToString());
 
                 Console.WriteLine("SelectDataIntoTable() " + _2DB_name + "id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page + " error  " + _2DB_error);
 
@@ -1224,6 +1018,35 @@ namespace nsTEST_Skanuj_to
             }
         }//Select()
 
+        public void Select()
+        {
+            Program program = new Program();
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc;", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                _2DB_name = (dataRow[@"name"].ToString());
+                _2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
+                _2DB_parent_doc_id = int.Parse(dataRow[@"parent_doc_id"].ToString());
+                _2DB_pages = int.Parse(dataRow[@"pages"].ToString());
+                _2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
+                _2DB_end_page = int.Parse(dataRow[@"end_page"].ToString());
+                _2DB_state = int.Parse(dataRow[@"state"].ToString());
+                _2DB_uploaded_date = dataRow[@"uploaded_date"].ToString();
+                _2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
+                _2DB_error = int.Parse(dataRow[@"error"].ToString());
+                //0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
+
+                Console.WriteLine("Select(string nazwaDoc) " + _2DB_name + " error z DB " + _2DB_error + " id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
+            }//foreach
+
+        }//Select()
 
         /// <summary>
         /// Odczytuje dane dokumentu z tabeli w bazie.
@@ -1258,6 +1081,51 @@ namespace nsTEST_Skanuj_to
 
         }//SelectPages(int idDoc)
 
+        public void SelectErrorId(int docId)
+        {
+            Program program = new Program();
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc WHERE doc_id = " + docId + ";", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                //_2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
+                //_2DB_parent_doc_id = int.Parse(dataRow[@"parent_doc_id"].ToString());
+                //_2DB_pages = int.Parse(dataRow[@"pages"].ToString());
+                //_2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
+                //_2DB_end_page = int.Parse(dataRow[@"end_page"].ToString());
+                //_2DB_state = int.Parse(dataRow[@"state"].ToString());
+                //_2DB_uploaded_date = dataRow[@"uploaded_date"].ToString();
+                //_2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
+                _2DB_error = int.Parse(dataRow[@"error"].ToString());
+            }
+        } // SelectError(s
+        public void UpdateErrorInDB(int docId)
+        {
+            int error = _2DB_error + 1;
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            var sqlUpdate = "UPDATE dbo.WgraneDoc SET error = @error WHERE doc_id = " + docId + ";";
+
+            using (SqlConnection sqlConnection1 = new SqlConnection(connString))
+            {
+                using (var command = new SqlCommand(sqlUpdate, sqlConnection1))
+                {
+                    sqlConnection1.Open();
+                    command.Parameters.AddWithValue("@error", error);
+                    command.ExecuteNonQuery();
+                    sqlConnection1.Close();
+                }
+            }
+        }//UpdateForProcessDB
         public void SelectError(string name)
         {
             Program program = new Program();
@@ -1280,6 +1148,75 @@ namespace nsTEST_Skanuj_to
                 //_2DB_uploaded_date = dataRow[@"uploaded_date"].ToString();
                 //_2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
                 _2DB_error = int.Parse(dataRow[@"error"].ToString());
+            }
+        } // SelectError(string name)
+
+        public void Select_3_Error()
+        {
+            Program program = new Program();
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc WHERE error = 3 OR error > 3;", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                _2DB_name = dataRow[@"name"].ToString();
+                _2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
+                _2DB_parent_doc_id = int.Parse(dataRow[@"parent_doc_id"].ToString());
+                _2DB_pages = int.Parse(dataRow[@"pages"].ToString());
+                _2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
+                _2DB_end_page = int.Parse(dataRow[@"end_page"].ToString());
+                _2DB_state = int.Parse(dataRow[@"state"].ToString());
+                _2DB_uploaded_date = dataRow[@"uploaded_date"].ToString();
+                _2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
+                _2DB_error = int.Parse(dataRow[@"error"].ToString());
+
+                string pdf_file = (_2DB_name + ".pdf").ToString();
+                string pdfFile = pdf_file;
+                string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+                string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
+                //tworzy katalog dla błędnych plików
+                string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
+                if (!System.IO.Directory.Exists(errorPath))
+                {
+                    System.IO.Directory.CreateDirectory(errorPath);
+                }
+
+                string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
+                string errorFile = System.IO.Path.Combine(errorPath, pdfFile);
+
+                if (System.IO.Directory.Exists(startPath))
+                {
+                    string[] error_files = System.IO.Directory.GetFiles(startPath);
+
+                    foreach (string e in error_files)
+                    {
+                        program.SelectError(_2DB_name);
+                        pdfFile = Path.GetFileName(e);
+                        errorFile = Path.Combine(errorPath, pdfFile);
+                        System.IO.File.Copy(e, errorFile, true);
+
+                    }
+                    System.IO.FileInfo fi = new FileInfo(startPath + pdfFile);
+                    System.IO.FileInfo fiTemp = new FileInfo(pdfPath + pdfFile);
+                    try
+                    {
+                        fi.Delete();
+                    }
+                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
+                    try
+                    {
+                        fiTemp.Delete();
+                    }
+                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fiTemp + " zgłosił " + ex.Message); }
+                }
+                else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje."); }
+
+                program.WriteToFile(DateTime.Now + " 3 error API nie jeste w stanie rozpoznać skanu " + _2DB_name + ". Program zaprzestał dalszego przetwarzania.");
             }
         } // SelectError(string name)
 
@@ -1355,6 +1292,92 @@ namespace nsTEST_Skanuj_to
             }
 
         }//SelectPages(int idDoc)
+
+        public void SelectPages_Id(string nameDoc)
+        {
+            Program program = new Program();
+            string connString = _connString;
+            SqlConnection sqlConnection = new SqlConnection(connString);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc WHERE name = '" + nameDoc + "';", sqlConnection);
+            DataSet dataSet = new DataSet("dbo.WgraneDoc");
+            sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
+            sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
+            DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
+
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                _2DB_name = (dataRow[@"name"].ToString());
+                _2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
+                _2DB_parent_doc_id = int.Parse(dataRow[@"parent_doc_id"].ToString());
+                _2DB_state = int.Parse(dataRow[@"state"].ToString());
+                _2DB_pages = int.Parse(dataRow[@"pages"].ToString());
+                _2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
+                _2DB_end_page = int.Parse(dataRow[@"end_page"].ToString());
+                _2DB_error = int.Parse(dataRow[@"error"].ToString());
+
+                Console.WriteLine(" ");
+                Console.WriteLine("Select id " + _2DB_name + "id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page + " error " + _2DB_error + " state " + _2DB_state);
+                Console.WriteLine(" ");
+
+                string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
+                string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+                int counter = dataTable.Rows.Count;
+
+                string Pdf_name = _2DB_name + ".pdf";
+
+                var inputDocument1 = PdfReader.Open(startPath + "\\" + Pdf_name, PdfDocumentOpenMode.Import);
+
+                string filenamePDF = _2DB_name + "(" + _2DB_start_page + "-" + _2DB_end_page + ").pdf";
+
+                int indEnd = _2DB_end_page - 1;
+                int indStart = _2DB_start_page - 1;
+                int str = _2DB_end_page - _2DB_start_page;
+
+                var outputDocument = new PdfDocument();
+                if (_2DB_state == 0)
+                {
+                    program.SelectErrorId(_2DB_doc_id);
+                    program.UpdateErrorInDB(_2DB_doc_id);
+                }
+                else if (_2DB_state == 1)
+                {
+                    program.SelectErrorId(_2DB_doc_id);
+                    program.UpdateErrorInDB(_2DB_doc_id);
+                }
+                else
+                {
+                    if (_2DB_pages == 1)
+                    {
+                        outputDocument.AddPage(inputDocument1.Pages[indEnd]);
+                        outputDocument.Save(pdfPath + "\\" + filenamePDF);
+                    }
+                    else
+                    {
+                        var pg = 0;
+                        //try
+                        //{
+                        for (pg = (indStart); pg <= (indEnd); pg++)
+                        {
+                            outputDocument.AddPage(inputDocument1.Pages[pg]);
+                        }
+                        //}
+                        //catch
+                        //{
+                        //    goto Koniec;
+                        //}
+                        outputDocument.Save(pdfPath + "\\" + filenamePDF);
+                        //Koniec:;
+                    }
+                }//else jeżeli status 3, 4, lub 5
+
+                WriteToFile("Utworzono pdf o nazwie " + _2DB_name + " o id " + _2DB_doc_id);
+
+
+
+
+            }//foreach
+
+        }//SelectPages(int idDoc)
         public static void CountPages(int idDoc)
         {
             Program program = new Program();
@@ -1393,7 +1416,7 @@ namespace nsTEST_Skanuj_to
         /// <summary>
         /// Generuje xml z dokumentów w DB
         /// </summary>
-        public static void GenerateXMLFromDoc()
+        public void GenerateXMLFromDoc()
         {
             Program program = new Program();
 
@@ -1415,44 +1438,54 @@ namespace nsTEST_Skanuj_to
                 int startpage = int.Parse(dataRow[@"start_page"].ToString());
                 int endpage = int.Parse(dataRow[@"end_page"].ToString());
                 int error = int.Parse(dataRow[@"error"].ToString());
+                int state = int.Parse(dataRow[@"state"].ToString());
 
-                try
+                if (state == 0)
                 {
-                    program.GetDataFromDoc(idDoc); //OK pobiera dane z dokumentu o podanym id
+                    Console.WriteLine(idDoc + " o nazwie " + nameDoc + " ma status " + state);
                 }
-                catch
+                else if (state == 1)
                 {
-                    program.WriteToFile(DateTime.Now + " Nie istnieje dokument o podanym id " + idDoc);
-
-                    program.SelectError(nameDoc);
-                    UpdateErrorDB(nameDoc);
+                    Console.WriteLine(idDoc + " o nazwie " + nameDoc + " ma status " + state);
                 }
-                Console.WriteLine(" ");
-                try
+                else
                 {
-                    program.FillPositionFromDocToXml(idDoc);//OK wgrywa poszczególne pozycję z fa do xml.
-
-                    program.CreateXML(nameDoc, startpage, endpage);//OK zapis danych do xml
-
-                    //odhaczenie pliku, z którego wygenerowano xml => czy wykasować plik z API
-                    if (_J_for_process == 0)
+                    try
                     {
+                        program.GetDataFromDoc(idDoc); //OK pobiera dane z dokumentu o podanym id.
+                        //program.FillPositionFromDocToXml(idDoc);//OK wgrywa poszczególne pozycję z fa do xml.
+                        program.CreateXML(idDoc, nameDoc, startpage, endpage);//OK zapis danych do xml.
 
-                        // TODO odblokować                          DeleteDB(idDoc);
-
-                        // TODO odblokować wykasowanie dokumentów z API                            program.DeleteDocument(idDoc);
-                        UpdateForProcessDB(idDoc);
                     }
-                    else
+                    catch
                     {
-                        UpdateForProcessDB(idDoc);
+                        program.WriteToFile(DateTime.Now + " Poblem z wygenerowaniem xml (dokument nieczytelny " + nameDoc + " " + idDoc + ".");
+                        program.SelectError(nameDoc);
+                        program.UpdateErrorDB(nameDoc);
                     }
+
                 }
-                catch
-                {
-                    program.WriteToFile(DateTime.Now + " Poblem z pobraniem danych z API dotyczy dokumentu " + nameDoc + " " + idDoc);
-                    UpdateErrorDB(nameDoc);
-                }
+
+
+
+
+
+
+
+                //odhaczenie pliku, z którego wygenerowano xml => czy wykasować plik z API
+                //if (_J_for_process == 0)
+                //{
+
+                //    // TODO odblokować                          DeleteDB(idDoc);
+
+                //    // TODO odblokować wykasowanie dokumentów z API                            program.DeleteDocument(idDoc);
+                //    UpdateForProcessDB(idDoc);
+                //}
+                //else
+                //{
+                //    UpdateForProcessDB(idDoc);
+                //}
+
 
                 _idDocument = idDoc;
             }// foreach
@@ -1596,12 +1629,13 @@ namespace nsTEST_Skanuj_to
 
                     UpdateStronyInDB(id_doc);// aktualizuje start i end strony 
 
-                    program.WriteToFile("Poprawnie dodano dane JSON dla dokumentu " + id_doc);
+
                     //SelectPages(id_doc);
                 }
                 catch
                 {
                     program.WriteToFile("Problem z wgraniem danych JSON dla dokumentu " + id_doc);
+
                 }
             }//for
 
@@ -1610,6 +1644,54 @@ namespace nsTEST_Skanuj_to
             return Execute<List<DocumentList>>(request);
         }//GetInfoDocumentList(string nameDoc)
 
+        public List<DocumentList> GetInfoFromDocumentList()
+        {
+            Program program = new Program();
+
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document/mode/search";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
+            // request.AddParameter("name", nameDoc, ParameterType.HttpHeader);
+
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            JArray jArray = JArray.Parse(JsonArrayString);
+            dynamic data = JObject.Parse(jArray[0].ToString());
+            int id_doc = 0;
+
+            int dlugosc = data.all_count;
+            Console.WriteLine("");
+            for (int i = 0; i <= (dlugosc - 1); i++)
+            {
+                try
+                {
+                    dynamic data1 = JObject.Parse(jArray[i].ToString());
+                    //odcięcie rozszerzenia z nazwy plików
+                    string long_J_nameDoc = data1.name;
+                    _J_idDocument = data1.id;
+                    _J_nameDoc = long_J_nameDoc.Substring(0, long_J_nameDoc.Length - 4);
+                    _J_stateDoc = data1.state;
+                    _J_uploadDate = data1.uploaded_date;
+                    _J_pages = data1.pages;
+                    _J_for_process = 1;
+                    _J_user_id = data1.user_id;
+                    program.Select(_J_nameDoc);
+                    
+                }
+                catch
+                {
+                    program.WriteToFile("Problem z wgraniem danych JSON dla dokumentu " + id_doc);
+
+                }
+            }//for
+
+
+            //Console.WriteLine("GetInfoDocumentList search-> " + content);// odpowiedz
+            return Execute<List<DocumentList>>(request);
+        }//GetInfoDocumentList(string nameDoc)
 
         public List<DocumentList> GetInfoDocumentList(string nameDoc)
         {
@@ -2286,12 +2368,54 @@ namespace nsTEST_Skanuj_to
             var JsonArrayString = content;
             dynamic data = JObject.Parse(JsonArrayString);
             _documentName = (data["name"]);
+
+            foreach (var val in data["positions"])
+            {
+                //Array.Resize(ref data["positions"], suma + 1);
+                //dane z Json
+
+                _IdProduct = val["IdProduct"];
+                _Product_code = val["product_code"];
+                _Nazwa = val["Nazwa"];
+                _Ilosc = val["Ilosc"];
+                _Jednostka = val["Jednostka"];
+                _Cena = val["Cena"];
+                _Brutto = val["Brutto"];
+                _Netto = val["Netto"];
+                _StawkaVAT = val["StawkaVAT"];
+                _VAT = val["VAT"];
+                _Validation = val["is_valid"]; // pobiera validation 
+
+                Console.WriteLine("#### id " + idDoc + "id produktu" + _IdProduct + " nazwa " + _Nazwa + " ilośc " + _Ilosc + " jednostka " + _Jednostka +
+                   " cena " + _Cena + " Brutto " + _Brutto + " netto " + _Netto + " stawkavat " + _StawkaVAT);
+
+                var pozycja = new nsXml.PozycjaXml();
+
+                pozycja.IdDoc = int.Parse(idDoc.ToString());
+                pozycja.IdProduct = _IdProduct.ToString();
+                pozycja.Product_code = _Product_code.ToString();
+                pozycja.Nazwa = _Nazwa.ToString();
+                pozycja.Ilosc = double.Parse(_Ilosc.ToString());
+                pozycja.Jednostka = _Jednostka.ToString();
+                pozycja.Cena = double.Parse(_Cena.ToString());
+                pozycja.Brutto = double.Parse(_Brutto.ToString());
+                pozycja.Netto = double.Parse(_Netto.ToString());
+                pozycja.StawkaVAT = int.Parse(_StawkaVAT.ToString());
+                pozycja.Vat = double.Parse(_VAT.ToString());
+                pozycja.Validation = double.Parse(_Validation.ToString());
+
+                _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation, pozycja.IdDoc));
+                Console.WriteLine("#### id " + pozycja.IdDoc + "id produktu" + pozycja.IdProduct + " nazwa " + pozycja.Nazwa + " ilośc " + pozycja.Ilosc + " jednostka " + pozycja.Jednostka + " cena " + pozycja.Cena + " Brutto " + pozycja.Brutto + " netto " + pozycja.Netto + " stawkavat " + pozycja.StawkaVAT);
+            }//foreach
+
+
             //pobranie rozpoznanych wartości dokumentu. 
             string status1 = " wymaga zweryfikowania. Rozpoznanie na poziomie - (";
             string status1a = "). Do weryfikacji wartość: ";
             string puste = "Pole jest puste. Nie wykryto wartości w polu ";
             string status0 = " rozpoznanie w wysokości (";
             string status0a = "). Rozpoznana wartość ";
+            Console.WriteLine("--> id Doc" + idDoc + " nazwa " + _documentName);
             try
             {
                 string rozp = (data["attributes"]["BruttoWalutaPodstawowa"]["is_valid"]).ToString();
@@ -2992,139 +3116,204 @@ namespace nsTEST_Skanuj_to
 
 
 
-        /// <summary>
-        /// Zapisuje do tabeli pozycję art z faktury z walidacją (do zapisu w XML)
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public DocumentOneXt FillPositionFromDocToXml(int idDoc) // // // // ok
-        {
-            Program program = new Program();
-            var client = new RestClient("http://app.skanuj.to/api");
-            var request = new RestRequest();
-            request.Resource = "document";
-            request.AddHeader("token", _tokenS.ToString());
-            request.AddHeader("company_id", _idUser.ToString());
+        ///// <summary>
+        ///// Zapisuje do tabeli pozycję art z faktury z walidacją (do zapisu w XML)
+        ///// </summary>
+        ///// <param name="id"></param>
+        ///// <returns></returns>
+        //public DocumentOneXt FillPositionFromDocToXml(int idDoc) // // // // ok
+        //{
+        //    Program program = new Program();
+        //    var client = new RestClient("http://app.skanuj.to/api");
+        //    var request = new RestRequest();
+        //    request.Resource = "document";
+        //    request.AddHeader("token", _tokenS.ToString());
+        //    request.AddHeader("company_id", _idUser.ToString());
 
-            request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
-            request.AddParameter("id", idDoc, ParameterType.GetOrPost);
+        //    request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
+        //    request.AddParameter("id", idDoc, ParameterType.GetOrPost);
 
-            IRestResponse restResponse = client.Execute(request);
-            var content = restResponse.Content;
-            var JsonArrayString = content;
-            dynamic data = JObject.Parse(JsonArrayString);
-            _documentName = (data["name"]);
+        //    IRestResponse restResponse = client.Execute(request);
+        //    var content = restResponse.Content;
+        //    var JsonArrayString = content;
+        //    dynamic data = JObject.Parse(JsonArrayString);
+        //    _documentName = (data["name"]);
 
-            //pobranie rozpoznanych wartości dokumentu. 
+        //    //pobranie rozpoznanych wartości dokumentu. 
 
-            foreach (var val in data["positions"])
-            {
-                try
-                {
-                    //Array.Resize(ref data["positions"], suma + 1);
-                    //dane z Json
-                    string idProduct = val["IdProduct"];
-                    string product_code = val["product_code"];
-                    string nazwa = val["Nazwa"];
-                    double ilosc = val["Ilosc"];
-                    string jednostka = val["Jednostka"];
-                    double cena = val["Cena"];
-                    double brutto = val["Brutto"];
-                    double netto = val["Netto"];
-                    int stawkaVAT = val["StawkaVAT"];
-                    double vAT = val["VAT"];
-                    int validation = val["is_valid"]; // pobiera validation 
+        //    foreach (var val in data["positions"])
+        //    {
+        //        try
+        //        {
+        //            //Array.Resize(ref data["positions"], suma + 1);
+        //            //dane z Json
+        //            string idProduct = val["IdProduct"];
+        //            string product_code = val["product_code"];
+        //            string nazwa = val["Nazwa"];
+        //            double ilosc = val["Ilosc"];
+        //            string jednostka = val["Jednostka"];
+        //            double cena = val["Cena"];
+        //            double brutto = val["Brutto"];
+        //            double netto = val["Netto"];
+        //            int stawkaVAT = val["StawkaVAT"];
+        //            double vAT = val["VAT"];
+        //            int validation = val["is_valid"]; // pobiera validation 
 
-                    var pozycja = new nsXml.PozycjaXml();
-                    pozycja.IdProduct = idProduct.ToString();
-                    pozycja.Product_code = product_code.ToString();
-                    pozycja.Nazwa = nazwa.ToString();
-                    pozycja.Ilosc = double.Parse(ilosc.ToString());
-                    pozycja.Jednostka = jednostka.ToString();
-                    pozycja.Cena = double.Parse(cena.ToString());
-                    pozycja.Brutto = double.Parse(brutto.ToString());
-                    pozycja.Netto = double.Parse(netto.ToString());
-                    pozycja.StawkaVAT = int.Parse(stawkaVAT.ToString());
-                    pozycja.Vat = double.Parse(vAT.ToString());
-                    pozycja.Validation = double.Parse(validation.ToString());
+        //            var pozycja = new nsXml.PozycjaXml();
+        //            pozycja.IdProduct = idProduct.ToString();
+        //            pozycja.Product_code = product_code.ToString();
+        //            pozycja.Nazwa = nazwa.ToString();
+        //            pozycja.Ilosc = double.Parse(ilosc.ToString());
+        //            pozycja.Jednostka = jednostka.ToString();
+        //            pozycja.Cena = double.Parse(cena.ToString());
+        //            pozycja.Brutto = double.Parse(brutto.ToString());
+        //            pozycja.Netto = double.Parse(netto.ToString());
+        //            pozycja.StawkaVAT = int.Parse(stawkaVAT.ToString());
+        //            pozycja.Vat = double.Parse(vAT.ToString());
+        //            pozycja.Validation = double.Parse(validation.ToString());
 
-                    _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation));
-                    WriteToFile("Poprawnie rozpoznano wartości dokumentu XML z API.");
-                }
-                catch { }
-            }//foreach
-            return Execute<DocumentOneXt>(request);
-        }//FillPositionFromDocToXml(int id)
+        //            _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation));
+        //            WriteToFile("Poprawnie rozpoznano wartości dokumentu XML z API.");
+        //        }
+        //        catch { }
+        //    }//foreach
+        //    return Execute<DocumentOneXt>(request);
+        //}//FillPositionFromDocToXml(int id)
         #endregion
 
         /// <summary>
         /// Tworzy strukturę xml.
         /// </summary>
         /// <param name="filepath"></param>
-        public void CreateXML(string name, int start, int end)
+        public void CreateXML(int docid, string name, int start, int end)
         {
             XDocument xml = new XDocument(
-                new XDeclaration("1.0", "utf-8", "yes"),
-                new XElement("Dokument", new XAttribute("version", "2.0"),
-                new XElement("Dane", new XElement("Test", "1.0"),
-                 new XElement("Nabywca",
-                     new XElement("NabywcaAdres", new XAttribute("is_valid", _rNabywcaAdres), _NabywcaAdres),
-                     new XElement("NabywcaKod", new XAttribute("is_valid", _rNabywcaKod), _NabywcaKod),
-                     new XElement("NabywcaMiejscowosc", new XAttribute("is_valid", _rNabywcaMiejscowosc), _NabywcaMiejscowosc),
-                     new XElement("NabywcaNazwa", new XAttribute("is_valid", _rNabywcaNazwa), _NabywcaNazwa),
-                     new XElement("NabywcaNip", new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
-                ),
-                new XElement("Sprzedawca",
-                     new XElement("SprzedawcaAdres", new XAttribute("is_valid", _rSprzedawcaAdres), _SprzedawcaAdres),
-                     new XElement("SprzedawcaKod", new XAttribute("is_valid", _rSprzedawcaKod), _SprzedawcaKod),
-                     new XElement("SprzedawcaMiejscowosc", new XAttribute("is_valid", _rSprzedawcaMiejscowosc), _SprzedawcaMiejscowosc),
-                     new XElement("SprzedawcaNazwa", new XAttribute("is_valid", _rSprzedawcaNazwa), _SprzedawcaNazwa),
-                     new XElement("SprzedawcaNip", new XAttribute("is_valid", _rSprzedawcaNip), _SprzedawcaNip),
-                     new XElement("KontoBankowe", new XAttribute("is_valid", _rKontoBankowe), _KontoBankowe)
-                ),
-                new XElement("Numeracja_i_daty",
-                     new XElement("NrFaktury", new XAttribute("is_valid", _rNrFaktury), _NrFaktury),
-                     new XElement("FakturaKorygowana", new XAttribute("is_valid", _rFakturaKorygowana), _FakturaKorygowana),
-                     new XElement("Korygujaca", new XAttribute("is_valid", _rKorygujaca), _Korygujaca),
-                     new XElement("PrzyczynaKorekty", new XAttribute("is_valid", _rPrzyczynaKorekty), _PrzyczynaKorekty),
-                     new XElement("DataSprzedazy", new XAttribute("is_valid", _rDataSprzedazy), _DataSprzedazy),
-                     new XElement("DataWplywu", new XAttribute("is_valid", _rDataWplywu), _DataWplywu),
-                     new XElement("DataWystawienia", new XAttribute("is_valid", _rDataWystawienia), _DataWystawienia),
-                     new XElement("MiesiacKsiegowy", new XAttribute("is_valid", _rMiesiacKsiegowy), _MiesiacKsiegowy)
-                     ),
-                new XElement("Kwoty",
-                     new XElement("NrZamowienia", new XAttribute("is_valid", _rNrZamowienia), _NrZamowienia),
-                     // new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCategoryDesc), _CategoryDesc),
-                     new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCzyNieKompletnaPozycja), _CzyNieKompletnaPozycja),
-                     //new XElement("Kategoria", new XAttribute("is_valid", _rKategoria), _Kategoria),
-                     //new XElement("KategoriaId", new XAttribute("is_valid",_rKategoriaId), _KategoriaId),
-                     new XElement("Waluta", new XAttribute("is_valid", _rWaluta), _Waluta),
-                     new XElement("KursWaluty", new XAttribute("is_valid", _rKursWaluty), _KursWaluty),
-                        new XElement("Pozycje",
-                        from pozycja in _listaPozycji
-                        select new XElement("pozycja", new XAttribute("is_valid", pozycja.Validation),
-                            new XElement("Nazwa", pozycja.Nazwa),
-                            new XElement("Brutto", pozycja.Brutto),
-                            new XElement("Cena", pozycja.Cena),
-                            new XElement("IdProductField", pozycja.IdProduct),
-                            new XElement("Ilosc", pozycja.Ilosc),
-                            new XElement("Jednostka", pozycja.Jednostka),
-                            new XElement("Netto", pozycja.Netto),
-                            new XElement("StawkaVAT", pozycja.StawkaVAT),
-                             new XElement("VAT", pozycja.Vat),
-                            new XElement("product_code", pozycja.Product_code)
-                        ),
-                     new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
-                     new XElement("NettoWalutaPodstawowa", new XAttribute("is_valid", _rNettoWalutaPodstawowa), _NettoWalutaPodstawowa),
-                     new XElement("RazemNetto", new XAttribute("is_valid", _rRazemNetto), _RazemNetto),
-                     new XElement("RazemVAT", new XAttribute("is_valid", _rRazemVAT), _RazemVAT),
-                     new XElement("VatWalutaPodstawowa", new XAttribute("is_valid", _rVatWalutaPodstawowa), _VatWalutaPodstawowa),
-                     new XElement("RazemBrutto", new XAttribute("is_valid", _rRazemBrutto), _RazemBrutto),
-                     new XElement("SposobPlatnosci", new XAttribute("is_valid", _rSposobPlatnosci), _SposobPlatnosci),
-                     new XElement("TerminPlatnosci", new XAttribute("is_valid", _rTerminPlatnosci), _TerminPlatnosci),
-                     new XElement("Zaplacono", new XAttribute("is_valid", _rZaplacono), _Zaplacono)
-                )
-                ))));
+               new XDeclaration("1.0", "utf-8", "yes"),
+               new XElement("Dokument", new XAttribute("version", "2.0"),
+               new XElement("Dane", new XElement("Test", "1.0"),
+                new XElement("Nabywca",
+                    new XElement("NabywcaAdres", new XAttribute("is_valid", _rNabywcaAdres), _NabywcaAdres),
+                    new XElement("NabywcaKod", new XAttribute("is_valid", _rNabywcaKod), _NabywcaKod),
+                    new XElement("NabywcaMiejscowosc", new XAttribute("is_valid", _rNabywcaMiejscowosc), _NabywcaMiejscowosc),
+                    new XElement("NabywcaNazwa", new XAttribute("is_valid", _rNabywcaNazwa), _NabywcaNazwa),
+                    new XElement("NabywcaNip", new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
+               ),
+               new XElement("Sprzedawca",
+                    new XElement("SprzedawcaAdres", new XAttribute("is_valid", _rSprzedawcaAdres), _SprzedawcaAdres),
+                    new XElement("SprzedawcaKod", new XAttribute("is_valid", _rSprzedawcaKod), _SprzedawcaKod),
+                    new XElement("SprzedawcaMiejscowosc", new XAttribute("is_valid", _rSprzedawcaMiejscowosc), _SprzedawcaMiejscowosc),
+                    new XElement("SprzedawcaNazwa", new XAttribute("is_valid", _rSprzedawcaNazwa), _SprzedawcaNazwa),
+                    new XElement("SprzedawcaNip", new XAttribute("is_valid", _rSprzedawcaNip), _SprzedawcaNip),
+                    new XElement("KontoBankowe", new XAttribute("is_valid", _rKontoBankowe), _KontoBankowe)
+               ),
+               new XElement("Numeracja_i_daty",
+                    new XElement("NrFaktury", new XAttribute("is_valid", _rNrFaktury), _NrFaktury),
+                    new XElement("FakturaKorygowana", new XAttribute("is_valid", _rFakturaKorygowana), _FakturaKorygowana),
+                    new XElement("Korygujaca", new XAttribute("is_valid", _rKorygujaca), _Korygujaca),
+                    new XElement("PrzyczynaKorekty", new XAttribute("is_valid", _rPrzyczynaKorekty), _PrzyczynaKorekty),
+                    new XElement("DataSprzedazy", new XAttribute("is_valid", _rDataSprzedazy), _DataSprzedazy),
+                    new XElement("DataWplywu", new XAttribute("is_valid", _rDataWplywu), _DataWplywu),
+                    new XElement("DataWystawienia", new XAttribute("is_valid", _rDataWystawienia), _DataWystawienia),
+                    new XElement("MiesiacKsiegowy", new XAttribute("is_valid", _rMiesiacKsiegowy), _MiesiacKsiegowy)
+                    ),
+               new XElement("Kwoty",
+                    new XElement("NrZamowienia", new XAttribute("is_valid", _rNrZamowienia), _NrZamowienia),
+                    // new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCategoryDesc), _CategoryDesc),
+                    new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCzyNieKompletnaPozycja), _CzyNieKompletnaPozycja),
+                    //new XElement("Kategoria", new XAttribute("is_valid", _rKategoria), _Kategoria),
+                    //new XElement("KategoriaId", new XAttribute("is_valid",_rKategoriaId), _KategoriaId),
+                    new XElement("Waluta", new XAttribute("is_valid", _rWaluta), _Waluta),
+                    new XElement("KursWaluty", new XAttribute("is_valid", _rKursWaluty), _KursWaluty),
+                       new XElement("Pozycje",
+                       from pozycja in _listaPozycji
+                       select new XElement("pozycja", new XAttribute("is_valid", _Validation),
+                           new XElement("Nazwa", _Nazwa),
+                           new XElement("Brutto", _Brutto),
+                           new XElement("Cena", _Cena),
+                           new XElement("IdProductField", _IdProduct),
+                           new XElement("Ilosc", _Ilosc),
+                           new XElement("Jednostka", _Jednostka),
+                           new XElement("Netto", _Netto),
+                           new XElement("StawkaVAT", _StawkaVAT),
+                            new XElement("VAT", _VAT),
+                           new XElement("product_code", _Product_code)
+                       ),
+                    new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
+                    new XElement("NettoWalutaPodstawowa", new XAttribute("is_valid", _rNettoWalutaPodstawowa), _NettoWalutaPodstawowa),
+                    new XElement("RazemNetto", new XAttribute("is_valid", _rRazemNetto), _RazemNetto),
+                    new XElement("RazemVAT", new XAttribute("is_valid", _rRazemVAT), _RazemVAT),
+                    new XElement("VatWalutaPodstawowa", new XAttribute("is_valid", _rVatWalutaPodstawowa), _VatWalutaPodstawowa),
+                    new XElement("RazemBrutto", new XAttribute("is_valid", _rRazemBrutto), _RazemBrutto),
+                    new XElement("SposobPlatnosci", new XAttribute("is_valid", _rSposobPlatnosci), _SposobPlatnosci),
+                    new XElement("TerminPlatnosci", new XAttribute("is_valid", _rTerminPlatnosci), _TerminPlatnosci),
+                    new XElement("Zaplacono", new XAttribute("is_valid", _rZaplacono), _Zaplacono)
+               )
+               ))));
+
+
+            //XDocument xml = new XDocument(
+            //    new XDeclaration("1.0", "utf-8", "yes"),
+            //    new XElement("Dokument", new XAttribute("version", "2.0"),
+            //    new XElement("Dane", new XElement("Test", "1.0"),
+            //     new XElement("Nabywca",
+            //         new XElement("NabywcaAdres", new XAttribute("is_valid", _rNabywcaAdres), _NabywcaAdres),
+            //         new XElement("NabywcaKod", new XAttribute("is_valid", _rNabywcaKod), _NabywcaKod),
+            //         new XElement("NabywcaMiejscowosc", new XAttribute("is_valid", _rNabywcaMiejscowosc), _NabywcaMiejscowosc),
+            //         new XElement("NabywcaNazwa", new XAttribute("is_valid", _rNabywcaNazwa), _NabywcaNazwa),
+            //         new XElement("NabywcaNip", new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
+            //    ),
+            //    new XElement("Sprzedawca",
+            //         new XElement("SprzedawcaAdres", new XAttribute("is_valid", _rSprzedawcaAdres), _SprzedawcaAdres),
+            //         new XElement("SprzedawcaKod", new XAttribute("is_valid", _rSprzedawcaKod), _SprzedawcaKod),
+            //         new XElement("SprzedawcaMiejscowosc", new XAttribute("is_valid", _rSprzedawcaMiejscowosc), _SprzedawcaMiejscowosc),
+            //         new XElement("SprzedawcaNazwa", new XAttribute("is_valid", _rSprzedawcaNazwa), _SprzedawcaNazwa),
+            //         new XElement("SprzedawcaNip", new XAttribute("is_valid", _rSprzedawcaNip), _SprzedawcaNip),
+            //         new XElement("KontoBankowe", new XAttribute("is_valid", _rKontoBankowe), _KontoBankowe)
+            //    ),
+            //    new XElement("Numeracja_i_daty",
+            //         new XElement("NrFaktury", new XAttribute("is_valid", _rNrFaktury), _NrFaktury),
+            //         new XElement("FakturaKorygowana", new XAttribute("is_valid", _rFakturaKorygowana), _FakturaKorygowana),
+            //         new XElement("Korygujaca", new XAttribute("is_valid", _rKorygujaca), _Korygujaca),
+            //         new XElement("PrzyczynaKorekty", new XAttribute("is_valid", _rPrzyczynaKorekty), _PrzyczynaKorekty),
+            //         new XElement("DataSprzedazy", new XAttribute("is_valid", _rDataSprzedazy), _DataSprzedazy),
+            //         new XElement("DataWplywu", new XAttribute("is_valid", _rDataWplywu), _DataWplywu),
+            //         new XElement("DataWystawienia", new XAttribute("is_valid", _rDataWystawienia), _DataWystawienia),
+            //         new XElement("MiesiacKsiegowy", new XAttribute("is_valid", _rMiesiacKsiegowy), _MiesiacKsiegowy)
+            //         ),
+            //    new XElement("Kwoty",
+            //         new XElement("NrZamowienia", new XAttribute("is_valid", _rNrZamowienia), _NrZamowienia),
+            //         // new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCategoryDesc), _CategoryDesc),
+            //         new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCzyNieKompletnaPozycja), _CzyNieKompletnaPozycja),
+            //         //new XElement("Kategoria", new XAttribute("is_valid", _rKategoria), _Kategoria),
+            //         //new XElement("KategoriaId", new XAttribute("is_valid",_rKategoriaId), _KategoriaId),
+            //         new XElement("Waluta", new XAttribute("is_valid", _rWaluta), _Waluta),
+            //         new XElement("KursWaluty", new XAttribute("is_valid", _rKursWaluty), _KursWaluty),
+            //            new XElement("Pozycje",
+            //            from pozycja in _listaPozycji
+            //            where pozycja.IdDoc == docid
+            //            select new XElement("pozycja", new XAttribute("is_valid", pozycja.Validation),
+            //                new XElement("Nazwa", pozycja.Nazwa),
+            //                new XElement("Brutto", pozycja.Brutto),
+            //                new XElement("Cena", pozycja.Cena),
+            //                new XElement("IdProductField", pozycja.IdProduct),
+            //                new XElement("Ilosc", pozycja.Ilosc),
+            //                new XElement("Jednostka", pozycja.Jednostka),
+            //                new XElement("Netto", pozycja.Netto),
+            //                new XElement("StawkaVAT", pozycja.StawkaVAT),
+            //                new XElement("VAT", pozycja.Vat),
+            //                new XElement("product_code", pozycja.Product_code)
+            //            ),
+            //         new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
+            //         new XElement("NettoWalutaPodstawowa", new XAttribute("is_valid", _rNettoWalutaPodstawowa), _NettoWalutaPodstawowa),
+            //         new XElement("RazemNetto", new XAttribute("is_valid", _rRazemNetto), _RazemNetto),
+            //         new XElement("RazemVAT", new XAttribute("is_valid", _rRazemVAT), _RazemVAT),
+            //         new XElement("VatWalutaPodstawowa", new XAttribute("is_valid", _rVatWalutaPodstawowa), _VatWalutaPodstawowa),
+            //         new XElement("RazemBrutto", new XAttribute("is_valid", _rRazemBrutto), _RazemBrutto),
+            //         new XElement("SposobPlatnosci", new XAttribute("is_valid", _rSposobPlatnosci), _SposobPlatnosci),
+            //         new XElement("TerminPlatnosci", new XAttribute("is_valid", _rTerminPlatnosci), _TerminPlatnosci),
+            //         new XElement("Zaplacono", new XAttribute("is_valid", _rZaplacono), _Zaplacono)
+            //    )
+            //    ))));
 
             //string longnazwa = _documentName.ToString().Replace('/', '_');
             //string nazwa = longnazwa.Substring(0, longnazwa.Length - 4);

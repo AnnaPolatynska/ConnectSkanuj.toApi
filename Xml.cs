@@ -3,6 +3,7 @@
 
     public partial class PozycjaXml
     {
+        private int IdDocField;
         private string IdProductField;
         private string ProductcodeField;
         private string NazwaField;
@@ -15,6 +16,11 @@
         private double VatField;
         private double ValidationField;
 
+        public int IdDoc
+        {
+            get { return IdDocField; }
+            set { IdDocField = value; }
+        }
         public string IdProduct
         {
             get { return IdProductField; }
@@ -72,8 +78,9 @@
             set { ValidationField = value; }
         }
 
-        public PozycjaXml(string IdProductField, string ProductcodeField, string NazwaField, double IloscField, string JednostkaField, double CenaField, double BruttoField, double NettoField, int StawkaVATField, double VatField, double validation)
+        public PozycjaXml(string IdProductField, string ProductcodeField, string NazwaField, double IloscField, string JednostkaField, double CenaField, double BruttoField, double NettoField, int StawkaVATField, double VatField, double validation, int idDoc)
         {
+            this.IdDoc = IdDocField;
             this.IdProduct = IdProductField;
             this.Product_code = ProductcodeField;
             this.Nazwa = NazwaField;
