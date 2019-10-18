@@ -726,14 +726,13 @@ namespace nsTEST_Skanuj_to
             int pages = _J_pages;
             int parent_doc_id = _J_parent_doc_id;
             string nazwaDoc = _J_nameDoc.ToString();
-            int error = _J_error;
-
+            
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlUpdate = "UPDATE dbo.WgraneDoc SET state = @state, name = @name, pages = @pages, parent_doc_id = @parent_doc_id, for_process = @for_process, error = @error WHERE doc_id = " + id_Doc + ";";
+            var sqlUpdate = "UPDATE dbo.WgraneDoc SET state = @state, name = @name, pages = @pages, parent_doc_id = @parent_doc_id, for_process = @for_process WHERE doc_id = " + id_Doc + ";";
 
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
@@ -746,7 +745,6 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("@state", state);
                     command.Parameters.AddWithValue("@name", nazwaDoc);
                     command.Parameters.AddWithValue("@for_process", true);
-                    command.Parameters.AddWithValue("@error", error);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
                 }
@@ -763,7 +761,7 @@ namespace nsTEST_Skanuj_to
             //sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process, error) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process, @error);");
+            var sqlInsert = ("INSERT INTO dbo.WgraneDoc (doc_id, name, state, uploaded_date, user_id, parent_doc_id, pages, for_process) VALUES (@doc_id, @name, @state, @uploaded_date, @user_id, @parent_doc_id, @pages, @for_process);");
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
                 using (var command = new SqlCommand(sqlInsert, sqlConnection1))
@@ -773,7 +771,7 @@ namespace nsTEST_Skanuj_to
                     int parent_doc_id = 0;
                     int pages = 0;
                     bool for_process = true;
-                    int error = 1;
+                    
 
                     sqlConnection1.Open();
                     command.Parameters.AddWithValue("@doc_id", value: idDoc);
@@ -784,7 +782,7 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("parent_doc_id", value: parent_doc_id);
                     command.Parameters.AddWithValue("pages", value: pages);
                     command.Parameters.AddWithValue("for_process", value: for_process);
-                    command.Parameters.AddWithValue("error", error);
+                    
                     //Console.WriteLine("InsertIntoDB() --->>>>>  _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + _2DB_user_id " + _2DB_user_id);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
@@ -815,7 +813,8 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("for_process", _J_for_process);
                     command.Parameters.AddWithValue("start_page", 0);
                     command.Parameters.AddWithValue("end_page", 0);
-                    command.Parameters.AddWithValue("error", _J_error);
+                    command.Parameters.AddWithValue("error", 0);
+                    
                     //command.Parameters.AddWithValue("count_pages", _J_count_pages);
                     // Console.WriteLine("InsertIntoDB() --->>>>>  " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                     command.ExecuteNonQuery();
@@ -1110,7 +1109,7 @@ namespace nsTEST_Skanuj_to
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                //_2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
+                _2DB_doc_id = int.Parse(dataRow[@"doc_id"].ToString());
                 //_2DB_parent_doc_id = int.Parse(dataRow[@"parent_doc_id"].ToString());
                 //_2DB_pages = int.Parse(dataRow[@"pages"].ToString());
                 //_2DB_start_page = int.Parse(dataRow[@"start_page"].ToString());
@@ -1120,6 +1119,8 @@ namespace nsTEST_Skanuj_to
                 //_2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
                 _2DB_name = (dataRow[@"name"].ToString());
                 _2DB_error = int.Parse(dataRow[@"error"].ToString());
+
+                Console.WriteLine("SelectError(int id_Document)-->  _2DB_error " + _2DB_error + " id "+ _2DB_doc_id+ " name "+ _2DB_name);
             }
         } // SelectError(string name)
 
@@ -1423,7 +1424,7 @@ namespace nsTEST_Skanuj_to
                     {
                         program.WriteToFile(DateTime.Now + " Poblem z wygenerowaniem xml (dokument - " + nameDoc + " " + idDoc + ").");
                         program.SelectError(idDoc);
-                        _2DB_error++;
+                        //_2DB_error++;
                         program.UpdateErrorDB(idDoc);
                     }
 
@@ -1554,7 +1555,7 @@ namespace nsTEST_Skanuj_to
                     _J_pages = data1.pages;
                     _J_for_process = 1;
                     _J_user_id = data1.user_id;
-
+                    //_J_error = 0;
                     // jeżeli _J_parent_doc_id jest NULLem wstaw 0
                     int? jparent_doc_id = (data1.parent_doc_id);
                     int b = jparent_doc_id ?? 0;
@@ -2362,7 +2363,7 @@ namespace nsTEST_Skanuj_to
                     //Console.WriteLine("#### id " + pozycja.IdDoc + "id produktu" + pozycja.IdProduct + " nazwa " + pozycja.Nazwa + " ilośc " + pozycja.Ilosc + " jednostka " + pozycja.Jednostka + " cena " + pozycja.Cena + " Brutto " + pozycja.Brutto + " netto " + pozycja.Netto + " stawkavat " + pozycja.StawkaVAT);
                 }//foreach
             }
-            catch { _2DB_error++; }
+            catch { }
 
             //pobranie rozpoznanych wartości dokumentu. 
             string status1 = " wymaga zweryfikowania. Rozpoznanie na poziomie - (";
