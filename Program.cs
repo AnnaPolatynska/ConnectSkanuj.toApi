@@ -217,8 +217,11 @@ namespace nsTEST_Skanuj_to
                 //Wgranie dokumentu do Api - dane do MSSerwer.
                 string fileName = fi.Name.ToString(); //dynamicznie zmieniana nazwa
                 string path = fi.Directory.ToString() + "/" + fileName;
-                program.uploadDocument(_idUser, fileName, path, _multi);
-
+                try
+                {
+                    program.uploadDocument(_idUser, fileName, path, _multi);
+                }
+                catch { program.WriteToFile(DateTime.Now + " problem z wgraniem do API dokumentu " + fileName + " z katalogu " + path + " " + _notice); }
                 //zapewnienie odpowiedniego kodowania pdf
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
                 using (var stream = File.Open(startPath + "\\" + fileName, FileMode.Open, FileAccess.Read))
@@ -235,58 +238,14 @@ namespace nsTEST_Skanuj_to
             //OK pobiera listę gotowych dokumentów dla wszystkich dokumentów z jsona i zapis w dB
             program.GetDocumentList();
 
+            // program.SelectErrorId(_2DB_doc_id);
+            // program.UpdateErrorInDB(_2DB_doc_id);
+
             program.CuttingPDF(); // OK tnie pdf o statusie innym niż 0 i 1 dla pozostałych generuje error do DB
 
             program.GenerateXMLFromDoc();  //OK Generuje xml
 
-
-            program.SelectError(_2DB_name);
-
-            //if (_2DB_error >= 3)
-            //{
-            //    string pdf_file = (_2DB_name + ".pdf").ToString();
-            //    string pdfFile = pdf_file;
-            //    //tworzy katalog dla błędnych plików
-            //    string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
-            //    if (!System.IO.Directory.Exists(errorPath))
-            //    {
-            //        System.IO.Directory.CreateDirectory(errorPath);
-            //    }
-
-            //    //string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
-            //    //string errorFile = System.IO.Path.Combine(errorPath, pdfFile);
-
-            //    if (System.IO.Directory.Exists(startPath))
-            //    {
-            //        string[] error_files = System.IO.Directory.GetFiles(startPath);
-
-            //        foreach (string e in error_files)
-            //        {
-            //            program.Select_3_Error();
-
-            //            pdfFile = Path.GetFileName(e);
-            //            string errorFile = Path.Combine(errorPath, pdfFile);
-            //            System.IO.File.Copy(e, errorFile, true);
-
-            //        }
-
-
-            //        System.IO.FileInfo fi = new FileInfo(startPath + pdfFile);
-            //        try
-            //        {
-            //            fi.Delete();
-            //        }
-            //        catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
-            //    }
-            //    else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje."); }
-            //    program.WriteToFile(DateTime.Now + " API nie jeste w stanie rozpoznać skanu " + _2DB_name + " . Program zaprzestał dalszego przetwarzania.");
-            //}
-            //else { }
-
             program.Select_3_Error();
-
-
-
 
         }//Main
 
@@ -423,8 +382,9 @@ namespace nsTEST_Skanuj_to
             _2DB_user_id = (data["good-uploads"][0]["user_id"]);
             _notice = (data["page_info"]["notice"]); //poprawność wgrania
 
-            //Console.WriteLine(" uploadDocument --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + "  _2DB_user_id " + _2DB_user_id);
-            Console.WriteLine("uploadDocument ->" + content);// odpowiedz
+            Console.WriteLine(" uploadDocument --->>>>> _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + "  _2DB_user_id " + _2DB_user_id);
+            Console.WriteLine(" ");
+            //Console.WriteLine("uploadDocument ->" + content);// odpowiedz
             return Execute<SkApiResponse>(request);
         }//SkApiResponse
 
@@ -467,9 +427,14 @@ namespace nsTEST_Skanuj_to
                 var inputDocument1 = PdfReader.Open(startPath + "\\" + filename1, PdfDocumentOpenMode.Import);
 
                 string sfilename1 = filename1.Substring(0, (filename1.Length) - 4);
-
-                program.SelectPages_Id(sfilename1);
-
+                try
+                {
+                    program.SelectPages_Id(sfilename1);
+                }
+                catch
+                {
+                    program.WriteToFile(DateTime.Now + " nie udało się pociąć dokument " + filename1 + " na strony pdf.");
+                }
             }
         }//CuttingPDF()
 
@@ -594,6 +559,9 @@ namespace nsTEST_Skanuj_to
                     sqlConnection.Close();
                 }
             }
+            Console.WriteLine(" ");
+            Console.WriteLine("wykasowano z bazy danych " + id_doc);
+            Console.WriteLine(" ");
         }//DeleteDB(int id_doc)
 
         public static void DeleteOldIDFromDB(int idDoc)
@@ -688,16 +656,16 @@ namespace nsTEST_Skanuj_to
             Console.WriteLine("UpdatePagesDB " + docId + " pages " + pages);
         }//UpdateParentIdDB(string docName)
 
-        public void UpdateErrorDB(string docName)
+        public void UpdateErrorDB(int id_Doc)
         {
-
             int error = (_2DB_error + 1);
+
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             DataTable dataTable = dataSet.Tables["dbo.WgraneDoc"];
 
-            var sqlUpdate = "UPDATE dbo.WgraneDoc SET error = @error WHERE name = '" + docName + "';";
+            var sqlUpdate = "UPDATE dbo.WgraneDoc SET error = @error WHERE doc_id = '" + id_Doc + "';";
 
             using (SqlConnection sqlConnection1 = new SqlConnection(connString))
             {
@@ -705,6 +673,8 @@ namespace nsTEST_Skanuj_to
                 {
                     sqlConnection1.Open();
                     command.Parameters.AddWithValue("@error", error);
+                    Console.WriteLine(" ");
+                    Console.WriteLine(id_Doc + " wygenerował błąd " + error);
                     //command.Parameters.AddWithValue("@doc_id", idDoc);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
@@ -1043,7 +1013,7 @@ namespace nsTEST_Skanuj_to
                 _2DB_error = int.Parse(dataRow[@"error"].ToString());
                 //0 dodany 1 w przetwarzaniu 2 zweryfikowany 3 do weryfikacji 4 wielostronicowy brak akcji 
 
-                Console.WriteLine("Select(string nazwaDoc) " + _2DB_name + " error z DB " + _2DB_error + " id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
+                Console.WriteLine("Select() " + _2DB_name + " error z DB " + _2DB_error + " id " + _2DB_doc_id + " parent_doc_id " + _2DB_parent_doc_id + " pages " + _2DB_pages + " start " + _2DB_start_page + " end " + _2DB_end_page);
             }//foreach
 
         }//Select()
@@ -1126,12 +1096,13 @@ namespace nsTEST_Skanuj_to
                 }
             }
         }//UpdateForProcessDB
-        public void SelectError(string name)
+
+        public void SelectError(int id_Document)
         {
             Program program = new Program();
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
-            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc WHERE name = '" + name + "';", sqlConnection);
+            SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT * from dbo.WgraneDoc WHERE doc_id = " + id_Document + ";", sqlConnection);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
             sqlDataAdapter.FillSchema(dataSet, SchemaType.Source, "dbo.WgraneDoc");
             sqlDataAdapter.Fill(dataSet, "dbo.WgraneDoc");
@@ -1147,6 +1118,7 @@ namespace nsTEST_Skanuj_to
                 //_2DB_state = int.Parse(dataRow[@"state"].ToString());
                 //_2DB_uploaded_date = dataRow[@"uploaded_date"].ToString();
                 //_2DB_stateForProcess = bool.Parse(dataRow[@"for_process"].ToString());
+                _2DB_name = (dataRow[@"name"].ToString());
                 _2DB_error = int.Parse(dataRow[@"error"].ToString());
             }
         } // SelectError(string name)
@@ -1178,7 +1150,9 @@ namespace nsTEST_Skanuj_to
                 string pdf_file = (_2DB_name + ".pdf").ToString();
                 string pdfFile = pdf_file;
                 string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
-                string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
+
+                //string pdfPath = System.Configuration.ConfigurationManager.AppSettings["pdfPath"].ToString();
+
                 //tworzy katalog dla błędnych plików
                 string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
                 if (!System.IO.Directory.Exists(errorPath))
@@ -1186,37 +1160,33 @@ namespace nsTEST_Skanuj_to
                     System.IO.Directory.CreateDirectory(errorPath);
                 }
 
+                System.IO.Directory.SetCurrentDirectory(startPath);
                 string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
                 string errorFile = System.IO.Path.Combine(errorPath, pdfFile);
+                System.IO.FileInfo fi = new FileInfo(startPath + pdfFile);
 
                 if (System.IO.Directory.Exists(startPath))
                 {
-                    string[] error_files = System.IO.Directory.GetFiles(startPath);
-
-                    foreach (string e in error_files)
+                    try
                     {
-                        program.SelectError(_2DB_name);
-                        pdfFile = Path.GetFileName(e);
                         errorFile = Path.Combine(errorPath, pdfFile);
-                        System.IO.File.Copy(e, errorFile, true);
+                        System.IO.File.Copy(pdf_file, errorFile, true);
+                        pdfFile = Path.GetFileName(pdf_file);
+
+                        try
+                        {
+
+                            fi.Delete();
+                        }
+                        catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
 
                     }
-                    System.IO.FileInfo fi = new FileInfo(startPath + pdfFile);
-                    System.IO.FileInfo fiTemp = new FileInfo(pdfPath + pdfFile);
-                    try
-                    {
-                        fi.Delete();
-                    }
-                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
-                    try
-                    {
-                        fiTemp.Delete();
-                    }
-                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fiTemp + " zgłosił " + ex.Message); }
+                    catch { program.WriteToFile(DateTime.Now + " Dokument " + pdfFile + " o id " + _2DB_doc_id + " nie znajduje się w katalogu " + startPath + "."); }
+
                 }
-                else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje."); }
+                else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje. Program zaprzestał dalszego przetwarzania."); }
 
-                program.WriteToFile(DateTime.Now + " 3 error API nie jeste w stanie rozpoznać skanu " + _2DB_name + ". Program zaprzestał dalszego przetwarzania.");
+
             }
         } // SelectError(string name)
 
@@ -1336,13 +1306,11 @@ namespace nsTEST_Skanuj_to
                 var outputDocument = new PdfDocument();
                 if (_2DB_state == 0)
                 {
-                    program.SelectErrorId(_2DB_doc_id);
-                    program.UpdateErrorInDB(_2DB_doc_id);
+
                 }
                 else if (_2DB_state == 1)
                 {
-                    program.SelectErrorId(_2DB_doc_id);
-                    program.UpdateErrorInDB(_2DB_doc_id);
+
                 }
                 else
                 {
@@ -1369,11 +1337,6 @@ namespace nsTEST_Skanuj_to
                         //Koniec:;
                     }
                 }//else jeżeli status 3, 4, lub 5
-
-                WriteToFile("Utworzono pdf o nazwie " + _2DB_name + " o id " + _2DB_doc_id);
-
-
-
 
             }//foreach
 
@@ -1442,50 +1405,42 @@ namespace nsTEST_Skanuj_to
 
                 if (state == 0)
                 {
-                    Console.WriteLine(idDoc + " o nazwie " + nameDoc + " ma status " + state);
+                    Console.WriteLine(idDoc + " o nazwie " + nameDoc + " ma status dodany.");
                 }
                 else if (state == 1)
                 {
-                    Console.WriteLine(idDoc + " o nazwie " + nameDoc + " ma status " + state);
+                    Console.WriteLine(idDoc + " o nazwie " + nameDoc + " ma status w przetwarzaniu.");
                 }
                 else
                 {
+                    program.GetDataFromDoc(idDoc); //OK pobiera dane z dokumentu o podanym id.
+                    //program.FillPositionFromDocToXml(idDoc);//OK wgrywa poszczególne pozycję z fa do xml.
                     try
                     {
-                        program.GetDataFromDoc(idDoc); //OK pobiera dane z dokumentu o podanym id.
-                        //program.FillPositionFromDocToXml(idDoc);//OK wgrywa poszczególne pozycję z fa do xml.
                         program.CreateXML(idDoc, nameDoc, startpage, endpage);//OK zapis danych do xml.
-
                     }
                     catch
                     {
-                        program.WriteToFile(DateTime.Now + " Poblem z wygenerowaniem xml (dokument nieczytelny " + nameDoc + " " + idDoc + ".");
-                        program.SelectError(nameDoc);
-                        program.UpdateErrorDB(nameDoc);
+                        program.WriteToFile(DateTime.Now + " Poblem z wygenerowaniem xml (dokument - " + nameDoc + " " + idDoc + ").");
+                        program.SelectError(idDoc);
+                        _2DB_error++;
+                        program.UpdateErrorDB(idDoc);
                     }
 
                 }
 
-
-
-
-
-
-
                 //odhaczenie pliku, z którego wygenerowano xml => czy wykasować plik z API
-                //if (_J_for_process == 0)
-                //{
+                if (_J_for_process == 0)
+                {
+                    DeleteDB(idDoc);
 
-                //    // TODO odblokować                          DeleteDB(idDoc);
-
-                //    // TODO odblokować wykasowanie dokumentów z API                            program.DeleteDocument(idDoc);
-                //    UpdateForProcessDB(idDoc);
-                //}
-                //else
-                //{
-                //    UpdateForProcessDB(idDoc);
-                //}
-
+                    // TODO odblokować wykasowanie dokumentów z API                             program.DeleteDocument(idDoc);
+                    UpdateForProcessDB(idDoc);
+                }
+                else
+                {
+                    UpdateForProcessDB(idDoc);
+                }
 
                 _idDocument = idDoc;
             }// foreach
@@ -1599,8 +1554,7 @@ namespace nsTEST_Skanuj_to
                     _J_pages = data1.pages;
                     _J_for_process = 1;
                     _J_user_id = data1.user_id;
-                    program.SelectError(_J_nameDoc);
-                    _J_error = _2DB_error;
+
                     // jeżeli _J_parent_doc_id jest NULLem wstaw 0
                     int? jparent_doc_id = (data1.parent_doc_id);
                     int b = jparent_doc_id ?? 0;
@@ -1679,7 +1633,7 @@ namespace nsTEST_Skanuj_to
                     _J_for_process = 1;
                     _J_user_id = data1.user_id;
                     program.Select(_J_nameDoc);
-                    
+
                 }
                 catch
                 {
@@ -2367,47 +2321,48 @@ namespace nsTEST_Skanuj_to
             var content = restResponse.Content;
             var JsonArrayString = content;
             dynamic data = JObject.Parse(JsonArrayString);
+
             _documentName = (data["name"]);
-
-            foreach (var val in data["positions"])
+            try
             {
-                //Array.Resize(ref data["positions"], suma + 1);
-                //dane z Json
+                foreach (var val in data["positions"])
+                {
+                    _IdProduct = val["IdProduct"];
+                    _Product_code = val["product_code"];
+                    _Nazwa = val["Nazwa"];
+                    _Ilosc = val["Ilosc"];
+                    _Jednostka = val["Jednostka"];
+                    _Cena = val["Cena"];
+                    _Brutto = val["Brutto"];
+                    _Netto = val["Netto"];
+                    _StawkaVAT = val["StawkaVAT"];
+                    _VAT = val["VAT"];
+                    _Validation = val["is_valid"]; // pobiera validation 
 
-                _IdProduct = val["IdProduct"];
-                _Product_code = val["product_code"];
-                _Nazwa = val["Nazwa"];
-                _Ilosc = val["Ilosc"];
-                _Jednostka = val["Jednostka"];
-                _Cena = val["Cena"];
-                _Brutto = val["Brutto"];
-                _Netto = val["Netto"];
-                _StawkaVAT = val["StawkaVAT"];
-                _VAT = val["VAT"];
-                _Validation = val["is_valid"]; // pobiera validation 
 
-                Console.WriteLine("#### id " + idDoc + "id produktu" + _IdProduct + " nazwa " + _Nazwa + " ilośc " + _Ilosc + " jednostka " + _Jednostka +
-                   " cena " + _Cena + " Brutto " + _Brutto + " netto " + _Netto + " stawkavat " + _StawkaVAT);
+                    Console.WriteLine("#### id " + idDoc + "id produktu" + _IdProduct + " nazwa " + _Nazwa + " ilośc " + _Ilosc + " jednostka " + _Jednostka +
+                       " cena " + _Cena + " Brutto " + _Brutto + " netto " + _Netto + " stawkavat " + _StawkaVAT);
 
-                var pozycja = new nsXml.PozycjaXml();
+                    //var pozycja = new nsXml.PozycjaXml();
 
-                pozycja.IdDoc = int.Parse(idDoc.ToString());
-                pozycja.IdProduct = _IdProduct.ToString();
-                pozycja.Product_code = _Product_code.ToString();
-                pozycja.Nazwa = _Nazwa.ToString();
-                pozycja.Ilosc = double.Parse(_Ilosc.ToString());
-                pozycja.Jednostka = _Jednostka.ToString();
-                pozycja.Cena = double.Parse(_Cena.ToString());
-                pozycja.Brutto = double.Parse(_Brutto.ToString());
-                pozycja.Netto = double.Parse(_Netto.ToString());
-                pozycja.StawkaVAT = int.Parse(_StawkaVAT.ToString());
-                pozycja.Vat = double.Parse(_VAT.ToString());
-                pozycja.Validation = double.Parse(_Validation.ToString());
+                    //pozycja.IdDoc = int.Parse(idDoc.ToString());
+                    //pozycja.IdProduct = _IdProduct.ToString();
+                    //pozycja.Product_code = _Product_code.ToString();
+                    //pozycja.Nazwa = _Nazwa.ToString();
+                    //pozycja.Ilosc = double.Parse(_Ilosc.ToString());
+                    //pozycja.Jednostka = _Jednostka.ToString();
+                    //pozycja.Cena = double.Parse(_Cena.ToString());
+                    //pozycja.Brutto = double.Parse(_Brutto.ToString());
+                    //pozycja.Netto = double.Parse(_Netto.ToString());
+                    //pozycja.StawkaVAT = int.Parse(_StawkaVAT.ToString());
+                    //pozycja.Vat = double.Parse(_VAT.ToString());
+                    //pozycja.Validation = double.Parse(_Validation.ToString());
 
-                _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation, pozycja.IdDoc));
-                Console.WriteLine("#### id " + pozycja.IdDoc + "id produktu" + pozycja.IdProduct + " nazwa " + pozycja.Nazwa + " ilośc " + pozycja.Ilosc + " jednostka " + pozycja.Jednostka + " cena " + pozycja.Cena + " Brutto " + pozycja.Brutto + " netto " + pozycja.Netto + " stawkavat " + pozycja.StawkaVAT);
-            }//foreach
-
+                    //_listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation, pozycja.IdDoc));
+                    //Console.WriteLine("#### id " + pozycja.IdDoc + "id produktu" + pozycja.IdProduct + " nazwa " + pozycja.Nazwa + " ilośc " + pozycja.Ilosc + " jednostka " + pozycja.Jednostka + " cena " + pozycja.Cena + " Brutto " + pozycja.Brutto + " netto " + pozycja.Netto + " stawkavat " + pozycja.StawkaVAT);
+                }//foreach
+            }
+            catch { _2DB_error++; }
 
             //pobranie rozpoznanych wartości dokumentu. 
             string status1 = " wymaga zweryfikowania. Rozpoznanie na poziomie - (";
@@ -2416,13 +2371,18 @@ namespace nsTEST_Skanuj_to
             string status0 = " rozpoznanie w wysokości (";
             string status0a = "). Rozpoznana wartość ";
             Console.WriteLine("--> id Doc" + idDoc + " nazwa " + _documentName);
+
             try
             {
                 string rozp = (data["attributes"]["BruttoWalutaPodstawowa"]["is_valid"]).ToString();
+                if (rozp == null) { rozp = ""; }
                 int statusA = data["attributes"]["BruttoWalutaPodstawowa"]["status"];
                 string value = (data["attributes"]["BruttoWalutaPodstawowa"]["value"]);
-                _BruttoWalutaPodstawowa = value;
+
+
                 _rBruttoWalutaPodstawowa = rozp;
+                if (_BruttoWalutaPodstawowa == null) { _BruttoWalutaPodstawowa = ""; } else { _BruttoWalutaPodstawowa = value; }
+                //if (_rBruttoWalutaPodstawowa == null) { _rBruttoWalutaPodstawowa = ""; } else { _rBruttoWalutaPodstawowa = value; }
                 string atr = "Brutto Waluta Podstawowa ";
 
                 if (statusA == 1)
@@ -2435,10 +2395,9 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr + status0 + rozp + status0a + value); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
-
                 string rozp1 = (data["attributes"]["CategoryDesc"]["is_valid"]).ToString();
                 int statusA1 = data["attributes"]["CategoryDesc"]["status"];
                 string value1 = (data["attributes"]["CategoryDesc"]["value"]);
@@ -2455,7 +2414,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr1 + status0 + rozp1 + status0a + value1); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp2 = (data["attributes"]["CzyNieKompletnaPozycja"]["is_valid"]).ToString();
@@ -2474,7 +2433,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr2 + status0 + rozp2 + status0a + value2); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp3 = (data["attributes"]["DataSprzedazy"]["is_valid"]).ToString();
@@ -2493,7 +2452,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr3 + status0 + rozp3 + status0a + value3); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp4 = (data["attributes"]["DataWplywu"]["is_valid"]).ToString();
@@ -2512,8 +2471,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr4 + status0 + rozp4 + status0a + value4); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp6 = (data["attributes"]["DataWystawienia"]["is_valid"]).ToString();
@@ -2532,7 +2490,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr6 + status0 + rozp6 + status0a + value6); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp7 = (data["attributes"]["FakturaKorygowana"]["is_valid"]).ToString();
@@ -2551,7 +2509,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr7 + status0 + rozp7 + status0a + value7); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp8 = (data["attributes"]["Kategoria"]["is_valid"]).ToString();
@@ -2570,8 +2528,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr8 + status0 + rozp8 + status0a + value8); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp5 = (data["attributes"]["KategoriaId"]["is_valid"]).ToString();
@@ -2590,7 +2547,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr5 + status0 + rozp5 + status0a + value5); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp9 = (data["attributes"]["KontoBankowe"]["is_valid"]).ToString();
@@ -2609,8 +2566,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr9 + status0 + rozp9 + status0a + value9); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp10 = (data["attributes"]["Korygujaca"]["is_valid"]).ToString();
@@ -2629,8 +2585,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr10 + status0 + rozp10 + status0a + value10); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp11 = (data["attributes"]["KursWaluty"]["is_valid"]).ToString();
@@ -2649,8 +2604,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr11 + status0 + rozp11 + status0a + value11); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp12 = (data["attributes"]["MiesiacKsiegowy"]["is_valid"]).ToString();
@@ -2669,8 +2623,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr12 + status0 + rozp12 + status0a + value12); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp13 = (data["attributes"]["NabywcaAdres"]["is_valid"]).ToString();
@@ -2689,7 +2642,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr13 + status0 + rozp13 + status0a + value13); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp14 = (data["attributes"]["NabywcaKod"]["is_valid"]).ToString();
@@ -2708,8 +2661,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr14 + status0 + rozp14 + status0a + value14); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp15 = (data["attributes"]["NabywcaMiejscowosc"]["is_valid"]).ToString();
@@ -2728,8 +2680,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr15 + status0 + rozp15 + status0a + value15); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp16 = (data["attributes"]["NabywcaNazwa"]["is_valid"]).ToString();
@@ -2748,8 +2699,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr16 + status0 + rozp16 + status0a + value16); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp17 = (data["attributes"]["NabywcaNip"]["is_valid"]).ToString();
@@ -2768,8 +2718,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr17 + status0 + rozp17 + status0a + value17); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp18 = (data["attributes"]["NettoWalutaPodstawowa"]["is_valid"]).ToString();
@@ -2788,8 +2737,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr18 + status0 + rozp18 + status0a + value18); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp19 = (data["attributes"]["NrFaktury"]["is_valid"]).ToString();
@@ -2808,8 +2756,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr19 + status0 + rozp19 + status0a + value19); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp20 = (data["attributes"]["NrZamowienia"]["is_valid"]).ToString();
@@ -2828,8 +2775,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr20 + status0 + rozp20 + status0a + value20); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp21 = (data["attributes"]["PrzyczynaKorekty"]["is_valid"]).ToString();
@@ -2849,8 +2795,7 @@ namespace nsTEST_Skanuj_to
                     { Console.WriteLine(atr21 + status0 + rozp21 + status0a + value21); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp22 = (data["attributes"]["RazemBrutto"]["is_valid"]).ToString();
@@ -2869,8 +2814,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr22 + status0 + rozp22 + status0a + value22); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp23 = (data["attributes"]["RazemNetto"]["is_valid"]).ToString();
@@ -2890,8 +2834,7 @@ namespace nsTEST_Skanuj_to
                     { Console.WriteLine(atr23 + status0 + rozp23 + status0a + value23); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp24 = (data["attributes"]["RazemVAT"]["is_valid"]).ToString();
@@ -2913,8 +2856,7 @@ namespace nsTEST_Skanuj_to
                     }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp25 = (data["attributes"]["SposobPlatnosci"]["is_valid"]).ToString();
@@ -2933,8 +2875,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr25 + status0 + rozp25 + status0a + value25); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp26 = (data["attributes"]["SprzedawcaAdres"]["is_valid"]).ToString();
@@ -2953,8 +2894,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr26 + status0 + rozp26 + status0a + value26); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp27 = (data["attributes"]["SprzedawcaKod"]["is_valid"]).ToString();
@@ -2973,8 +2913,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr27 + status0 + rozp27 + status0a + value27); }
                 }
             }
-            catch { };
-
+            catch { }
             try
             {
                 string rozp28 = (data["attributes"]["SprzedawcaMiejscowosc"]["is_valid"]).ToString();
@@ -2993,7 +2932,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr28 + status0 + rozp28 + status0a + value28); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp29 = (data["attributes"]["SprzedawcaNazwa"]["is_valid"]).ToString();
@@ -3012,7 +2951,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr29 + status0 + rozp29 + status0a + value29); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp30 = (data["attributes"]["SprzedawcaNip"]["is_valid"]).ToString();
@@ -3031,7 +2970,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr30 + status0 + rozp30 + status0a + value30); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp31 = (data["attributes"]["TerminPlatnosci"]["is_valid"]).ToString();
@@ -3050,7 +2989,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr31 + status0 + rozp31 + status0a + value31); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp32 = (data["attributes"]["VatWalutaPodstawowa"]["is_valid"]).ToString();
@@ -3069,7 +3008,7 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr32 + status0 + rozp32 + status0a + value32); }
                 }
             }
-            catch { };
+            catch { }
             try
             {
                 string rozp33 = (data["attributes"]["Waluta"]["is_valid"]).ToString();
@@ -3087,10 +3026,7 @@ namespace nsTEST_Skanuj_to
                     if (value33 == "") { Console.WriteLine(puste + atr33); }
                     else { Console.WriteLine(atr33 + status0 + rozp33 + status0a + value33); }
                 }
-            }
-            catch { };
-            try
-            {
+
                 string rozp34 = (data["attributes"]["Zaplacono"]["is_valid"]).ToString();
                 int statusA34 = data["attributes"]["Zaplacono"]["status"];
                 string value34 = (data["attributes"]["Zaplacono"]["value"]);
@@ -3107,78 +3043,84 @@ namespace nsTEST_Skanuj_to
                     else { Console.WriteLine(atr34 + status0 + rozp34 + status0a + value34); }
                 }
             }
-            catch { };
-            _documentName = (data["name"]);
+            catch { }
+            //catch
+            //{
+            //    Program program = new Program();
+            //    program.WriteToFile(_documentName + " problem z rozpoznaniem danych przez API.");
+            //};
 
-            //Console.WriteLine("GetDataFromDoc " + content);
+
+            Console.WriteLine(" ");
+            Console.WriteLine("GetDataFromDoc " + content);
             return Execute<DocumentOneXt>(request);
         }//GetDataFromDoc(int id)
 
 
 
-        ///// <summary>
-        ///// Zapisuje do tabeli pozycję art z faktury z walidacją (do zapisu w XML)
-        ///// </summary>
-        ///// <param name="id"></param>
-        ///// <returns></returns>
-        //public DocumentOneXt FillPositionFromDocToXml(int idDoc) // // // // ok
-        //{
-        //    Program program = new Program();
-        //    var client = new RestClient("http://app.skanuj.to/api");
-        //    var request = new RestRequest();
-        //    request.Resource = "document";
-        //    request.AddHeader("token", _tokenS.ToString());
-        //    request.AddHeader("company_id", _idUser.ToString());
+        /// <summary>
+        /// Zapisuje do tabeli pozycję art z faktury z walidacją (do zapisu w XML)
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public DocumentOneXt FillPositionFromDocToXml(int idDoc) // // // // ok
+        {
+            Program program = new Program();
+            var client = new RestClient("http://app.skanuj.to/api");
+            var request = new RestRequest();
+            request.Resource = "document";
+            request.AddHeader("token", _tokenS.ToString());
+            request.AddHeader("company_id", _idUser.ToString());
 
-        //    request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
-        //    request.AddParameter("id", idDoc, ParameterType.GetOrPost);
+            request.AddParameter("mode", "one-xt", ParameterType.GetOrPost);
+            request.AddParameter("id", idDoc, ParameterType.GetOrPost);
 
-        //    IRestResponse restResponse = client.Execute(request);
-        //    var content = restResponse.Content;
-        //    var JsonArrayString = content;
-        //    dynamic data = JObject.Parse(JsonArrayString);
-        //    _documentName = (data["name"]);
+            IRestResponse restResponse = client.Execute(request);
+            var content = restResponse.Content;
+            var JsonArrayString = content;
+            dynamic data = JObject.Parse(JsonArrayString);
+            _documentName = (data["name"]);
 
-        //    //pobranie rozpoznanych wartości dokumentu. 
+            //pobranie rozpoznanych wartości dokumentu. 
 
-        //    foreach (var val in data["positions"])
-        //    {
-        //        try
-        //        {
-        //            //Array.Resize(ref data["positions"], suma + 1);
-        //            //dane z Json
-        //            string idProduct = val["IdProduct"];
-        //            string product_code = val["product_code"];
-        //            string nazwa = val["Nazwa"];
-        //            double ilosc = val["Ilosc"];
-        //            string jednostka = val["Jednostka"];
-        //            double cena = val["Cena"];
-        //            double brutto = val["Brutto"];
-        //            double netto = val["Netto"];
-        //            int stawkaVAT = val["StawkaVAT"];
-        //            double vAT = val["VAT"];
-        //            int validation = val["is_valid"]; // pobiera validation 
+            foreach (var val in data["positions"])
+            {
+                try
+                {
+                    //Array.Resize(ref data["positions"], suma + 1);
+                    //dane z Json
+                    string idProduct = val["IdProduct"];
+                    string product_code = val["product_code"];
+                    string nazwa = val["Nazwa"];
+                    double ilosc = val["Ilosc"];
+                    string jednostka = val["Jednostka"];
+                    double cena = val["Cena"];
+                    double brutto = val["Brutto"];
+                    double netto = val["Netto"];
+                    int stawkaVAT = val["StawkaVAT"];
+                    double vAT = val["VAT"];
+                    int validation = val["is_valid"]; // pobiera validation 
 
-        //            var pozycja = new nsXml.PozycjaXml();
-        //            pozycja.IdProduct = idProduct.ToString();
-        //            pozycja.Product_code = product_code.ToString();
-        //            pozycja.Nazwa = nazwa.ToString();
-        //            pozycja.Ilosc = double.Parse(ilosc.ToString());
-        //            pozycja.Jednostka = jednostka.ToString();
-        //            pozycja.Cena = double.Parse(cena.ToString());
-        //            pozycja.Brutto = double.Parse(brutto.ToString());
-        //            pozycja.Netto = double.Parse(netto.ToString());
-        //            pozycja.StawkaVAT = int.Parse(stawkaVAT.ToString());
-        //            pozycja.Vat = double.Parse(vAT.ToString());
-        //            pozycja.Validation = double.Parse(validation.ToString());
+                    var pozycja = new nsXml.PozycjaXml();
+                    pozycja.IdProduct = idProduct.ToString();
+                    pozycja.Product_code = product_code.ToString();
+                    pozycja.Nazwa = nazwa.ToString();
+                    pozycja.Ilosc = double.Parse(ilosc.ToString());
+                    pozycja.Jednostka = jednostka.ToString();
+                    pozycja.Cena = double.Parse(cena.ToString());
+                    pozycja.Brutto = double.Parse(brutto.ToString());
+                    pozycja.Netto = double.Parse(netto.ToString());
+                    pozycja.StawkaVAT = int.Parse(stawkaVAT.ToString());
+                    pozycja.Vat = double.Parse(vAT.ToString());
+                    pozycja.Validation = double.Parse(validation.ToString());
 
-        //            _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation));
-        //            WriteToFile("Poprawnie rozpoznano wartości dokumentu XML z API.");
-        //        }
-        //        catch { }
-        //    }//foreach
-        //    return Execute<DocumentOneXt>(request);
-        //}//FillPositionFromDocToXml(int id)
+                    _listaPozycji.Add(new PozycjaXml(pozycja.IdProduct, pozycja.Product_code, pozycja.Nazwa, pozycja.Ilosc, pozycja.Jednostka, pozycja.Cena, pozycja.Brutto, pozycja.Netto, pozycja.StawkaVAT, pozycja.Vat, pozycja.Validation, pozycja.IdDoc));
+                    WriteToFile("Poprawnie rozpoznano wartości dokumentu XML z API.");
+                }
+                catch { }
+            }//foreach
+            return Execute<DocumentOneXt>(request);
+        }//FillPositionFromDocToXml(int id)
         #endregion
 
         /// <summary>
@@ -3289,19 +3231,19 @@ namespace nsTEST_Skanuj_to
             //         new XElement("Waluta", new XAttribute("is_valid", _rWaluta), _Waluta),
             //         new XElement("KursWaluty", new XAttribute("is_valid", _rKursWaluty), _KursWaluty),
             //            new XElement("Pozycje",
-            //            from pozycja in _listaPozycji
-            //            where pozycja.IdDoc == docid
-            //            select new XElement("pozycja", new XAttribute("is_valid", pozycja.Validation),
-            //                new XElement("Nazwa", pozycja.Nazwa),
-            //                new XElement("Brutto", pozycja.Brutto),
-            //                new XElement("Cena", pozycja.Cena),
-            //                new XElement("IdProductField", pozycja.IdProduct),
-            //                new XElement("Ilosc", pozycja.Ilosc),
-            //                new XElement("Jednostka", pozycja.Jednostka),
-            //                new XElement("Netto", pozycja.Netto),
-            //                new XElement("StawkaVAT", pozycja.StawkaVAT),
-            //                new XElement("VAT", pozycja.Vat),
-            //                new XElement("product_code", pozycja.Product_code)
+            //            from poz in _listaPozycji
+            //            where poz.IdDoc == docid
+            //            select new XElement("pozycja", new XAttribute("is_valid", poz.Validation),
+            //                new XElement("Nazwa", poz.Nazwa),
+            //                new XElement("Brutto", poz.Brutto),
+            //                new XElement("Cena", poz.Cena),
+            //                new XElement("IdProductField", poz.IdProduct),
+            //                new XElement("Ilosc", poz.Ilosc),
+            //                new XElement("Jednostka", poz.Jednostka),
+            //                new XElement("Netto", poz.Netto),
+            //                new XElement("StawkaVAT", poz.StawkaVAT),
+            //                new XElement("VAT", poz.Vat),
+            //                new XElement("product_code", poz.Product_code)
             //            ),
             //         new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
             //         new XElement("NettoWalutaPodstawowa", new XAttribute("is_valid", _rNettoWalutaPodstawowa), _NettoWalutaPodstawowa),
@@ -3340,13 +3282,10 @@ namespace nsTEST_Skanuj_to
                     _J_for_process = 0;
                     xml.Save(filename);
                     WriteToFile(DateTime.Now + " Wygenerowano XML " + filename);
-
                 }
                 catch
                 {
                     WriteToFile(DateTime.Now + " Problem z wygenerowaniem pliku XML " + filename);
-                    _2DB_error++;
-                    UpdateErrorDB(filename);
                 }
             }
             else
@@ -3360,11 +3299,86 @@ namespace nsTEST_Skanuj_to
                 catch
                 {
                     WriteToFile(DateTime.Now + " Problem z wygenerowaniem pliku XML " + filename);
-                    _2DB_error++;
-                    UpdateErrorDB(filename);
+
                 }
             }
 
+            _rNabywcaAdres = string.Empty;
+            _NabywcaAdres = string.Empty;
+            _rNabywcaKod = string.Empty;
+            _NabywcaKod = string.Empty;
+            _rNabywcaMiejscowosc = string.Empty;
+            _NabywcaMiejscowosc = string.Empty;
+            _rNabywcaNazwa = string.Empty;
+            _NabywcaNazwa = string.Empty;
+            _rNabywcaNip = string.Empty;
+            _NabywcaNip = string.Empty;
+            _rSprzedawcaAdres = string.Empty;
+            _SprzedawcaAdres = string.Empty;
+            _rSprzedawcaKod = string.Empty;
+            _SprzedawcaKod = string.Empty;
+            _rSprzedawcaMiejscowosc = string.Empty;
+            _SprzedawcaMiejscowosc = string.Empty;
+            _rSprzedawcaNazwa = string.Empty;
+            _SprzedawcaNazwa = string.Empty;
+            _rSprzedawcaNip = string.Empty;
+            _SprzedawcaNip = string.Empty;
+            _rKontoBankowe = string.Empty;
+            _KontoBankowe = string.Empty;
+            _rNrFaktury = string.Empty;
+            _NrFaktury = string.Empty;
+            _rFakturaKorygowana = string.Empty;
+            _FakturaKorygowana = string.Empty;
+            _rKorygujaca = string.Empty;
+            _Korygujaca = string.Empty;
+            _rPrzyczynaKorekty = string.Empty;
+            _PrzyczynaKorekty = string.Empty;
+            _rDataSprzedazy = string.Empty;
+            _DataSprzedazy = string.Empty;
+            _rDataWplywu = string.Empty;
+            _DataWplywu = string.Empty;
+            _rDataWystawienia = string.Empty;
+            _DataWystawienia = string.Empty;
+            _rMiesiacKsiegowy = string.Empty;
+            _MiesiacKsiegowy = string.Empty;
+            _rNrZamowienia = string.Empty;
+            _NrZamowienia = string.Empty;
+            _rCzyNieKompletnaPozycja = string.Empty;
+            _CzyNieKompletnaPozycja = string.Empty;
+            _rWaluta = string.Empty;
+            _Waluta = string.Empty;
+            _rKursWaluty = string.Empty;
+            _KursWaluty = string.Empty;
+            _rBruttoWalutaPodstawowa = string.Empty;
+            _BruttoWalutaPodstawowa = string.Empty;
+            _rNettoWalutaPodstawowa = string.Empty;
+            _NettoWalutaPodstawowa = string.Empty;
+            _rRazemNetto = string.Empty;
+            _RazemNetto = string.Empty;
+            _rRazemVAT = string.Empty;
+            _RazemVAT = string.Empty;
+            _rVatWalutaPodstawowa = string.Empty;
+            _VatWalutaPodstawowa = string.Empty;
+            _rRazemBrutto = string.Empty;
+            _RazemBrutto = string.Empty;
+            _rSposobPlatnosci = string.Empty;
+            _SposobPlatnosci = string.Empty;
+            _rTerminPlatnosci = string.Empty;
+            _TerminPlatnosci = string.Empty;
+            _rZaplacono = string.Empty;
+            _Zaplacono = string.Empty;
+
+            _IdProduct = string.Empty;
+            _Product_code = string.Empty;
+            _Nazwa = string.Empty;
+            _Ilosc = 0;
+            _Jednostka = string.Empty;
+            _Cena = 0;
+            _Brutto = 0;
+            _Netto = 0;
+            _StawkaVAT = 0;
+            _VAT = 0;
+            _Validation = 0;
         }//CreateXML(string filename)
 
 
