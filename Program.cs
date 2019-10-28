@@ -236,8 +236,11 @@ namespace nsTEST_Skanuj_to
             }//foreach
 
             //OK pobiera listę gotowych dokumentów dla wszystkich dokumentów z jsona i zapis w dB
-            program.GetDocumentList();
-
+            try
+            {
+                program.GetDocumentList();
+            }
+            catch { }
             // program.SelectErrorId(_2DB_doc_id);
             // program.UpdateErrorInDB(_2DB_doc_id);
 
@@ -726,7 +729,7 @@ namespace nsTEST_Skanuj_to
             int pages = _J_pages;
             int parent_doc_id = _J_parent_doc_id;
             string nazwaDoc = _J_nameDoc.ToString();
-            
+
             string connString = _connString;
             SqlConnection sqlConnection = new SqlConnection(connString);
             DataSet dataSet = new DataSet("dbo.WgraneDoc");
@@ -771,7 +774,7 @@ namespace nsTEST_Skanuj_to
                     int parent_doc_id = 0;
                     int pages = 0;
                     bool for_process = true;
-                    
+
 
                     sqlConnection1.Open();
                     command.Parameters.AddWithValue("@doc_id", value: idDoc);
@@ -782,7 +785,7 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("parent_doc_id", value: parent_doc_id);
                     command.Parameters.AddWithValue("pages", value: pages);
                     command.Parameters.AddWithValue("for_process", value: for_process);
-                    
+
                     //Console.WriteLine("InsertIntoDB() --->>>>>  _newIdDocument " + _newIdDocument + " _documentName " + _documentName + " _notice " + _notice + " _2DB_state " + _2DB_state + " _2DB_uploaded_date " + _2DB_uploaded_date + _2DB_user_id " + _2DB_user_id);
                     command.ExecuteNonQuery();
                     sqlConnection1.Close();
@@ -814,7 +817,7 @@ namespace nsTEST_Skanuj_to
                     command.Parameters.AddWithValue("start_page", 0);
                     command.Parameters.AddWithValue("end_page", 0);
                     command.Parameters.AddWithValue("error", 0);
-                    
+
                     //command.Parameters.AddWithValue("count_pages", _J_count_pages);
                     // Console.WriteLine("InsertIntoDB() --->>>>>  " + _J_nameDoc + "ilość stron " + _J_pages + " id doc " + _J_idDocument + " id parent " + _J_parent_doc_id + " " + _J_uploadDate + " user " + _J_user_id);
                     command.ExecuteNonQuery();
@@ -1120,7 +1123,7 @@ namespace nsTEST_Skanuj_to
                 _2DB_name = (dataRow[@"name"].ToString());
                 _2DB_error = int.Parse(dataRow[@"error"].ToString());
 
-                Console.WriteLine("SelectError(int id_Document)-->  _2DB_error " + _2DB_error + " id "+ _2DB_doc_id+ " name "+ _2DB_name);
+                Console.WriteLine("SelectError(int id_Document)-->  _2DB_error " + _2DB_error + " id " + _2DB_doc_id + " name " + _2DB_name);
             }
         } // SelectError(string name)
 
@@ -1190,6 +1193,9 @@ namespace nsTEST_Skanuj_to
 
             }
         } // SelectError(string name)
+
+       
+
 
         public void SelectPages_Id(int idDoc)
         {
@@ -1332,7 +1338,7 @@ namespace nsTEST_Skanuj_to
                         //}
                         //catch
                         //{
-                        //    goto Koniec;
+                        
                         //}
                         outputDocument.Save(pdfPath + "\\" + filenamePDF);
                         //Koniec:;
@@ -1419,12 +1425,52 @@ namespace nsTEST_Skanuj_to
                     try
                     {
                         program.CreateXML(idDoc, nameDoc, startpage, endpage);//OK zapis danych do xml.
+
+
+                        //TODO Gdy wygeneruje przenieś do folderu zrealizowane
+                            string pdf_file = (nameDoc + ".pdf").ToString();
+                            string pdfFile = pdf_file;
+                            string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+                            string okPath = System.Configuration.ConfigurationManager.AppSettings["okPath"].ToString();
+
+                            //tworzy katalog dla błędnych plików
+                            string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
+                            if (!System.IO.Directory.Exists(okPath))
+                            {
+                                System.IO.Directory.CreateDirectory(okPath);
+                            }
+                            System.IO.Directory.SetCurrentDirectory(startPath);
+                            string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
+                            string errorFile = System.IO.Path.Combine(okPath, pdfFile);
+                            System.IO.FileInfo fi = new FileInfo(okPath + pdfFile);
+
+                            if (System.IO.Directory.Exists(startPath))
+                            {
+                                try
+                                {
+                                    errorFile = Path.Combine(okPath, pdfFile);
+                                    System.IO.File.Copy(pdf_file, pdf_file, true);
+                                    pdfFile = Path.GetFileName(pdf_file);
+                                    try
+                                    {
+                                        fi.Delete();
+                                    }
+                                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
+
+                                }
+                                catch { program.WriteToFile(DateTime.Now + " Dokument " + pdfFile + " o id " + idDoc + " nie znajduje się w katalogu " + startPath + "."); }
+
+                            }
+                            else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje. Program zaprzestał dalszego przetwarzania."); }
+                        
+
+
                     }
                     catch
                     {
+                       
                         program.WriteToFile(DateTime.Now + " Poblem z wygenerowaniem xml (dokument - " + nameDoc + " " + idDoc + ").");
                         program.SelectError(idDoc);
-                        //_2DB_error++;
                         program.UpdateErrorDB(idDoc);
                     }
 
@@ -1435,7 +1481,8 @@ namespace nsTEST_Skanuj_to
                 {
                     DeleteDB(idDoc);
 
-                    // TODO odblokować wykasowanie dokumentów z API                             program.DeleteDocument(idDoc);
+                    // TODO odblokować wykasowanie dokumentów z API                             
+                    program.DeleteDocument(idDoc);
                     UpdateForProcessDB(idDoc);
                 }
                 else
@@ -2701,11 +2748,13 @@ namespace nsTEST_Skanuj_to
                 }
             }
             catch { }
+
             try
             {
                 string rozp17 = (data["attributes"]["NabywcaNip"]["is_valid"]).ToString();
                 int statusA17 = data["attributes"]["NabywcaNip"]["status"];
                 string value17 = (data["attributes"]["NabywcaNip"]["value"]);
+               
                 _NabywcaNip = value17;
                 _rNabywcaNip = rozp17;
                 string atr17 = "NabywcaNip ";
@@ -2720,6 +2769,7 @@ namespace nsTEST_Skanuj_to
                 }
             }
             catch { }
+        
             try
             {
                 string rozp18 = (data["attributes"]["NettoWalutaPodstawowa"]["is_valid"]).ToString();
@@ -3045,15 +3095,10 @@ namespace nsTEST_Skanuj_to
                 }
             }
             catch { }
-            //catch
-            //{
-            //    Program program = new Program();
-            //    program.WriteToFile(_documentName + " problem z rozpoznaniem danych przez API.");
-            //};
-
-
+           
             Console.WriteLine(" ");
             Console.WriteLine("GetDataFromDoc " + content);
+        
             return Execute<DocumentOneXt>(request);
         }//GetDataFromDoc(int id)
 
@@ -3194,72 +3239,8 @@ namespace nsTEST_Skanuj_to
                ))));
 
 
-            //XDocument xml = new XDocument(
-            //    new XDeclaration("1.0", "utf-8", "yes"),
-            //    new XElement("Dokument", new XAttribute("version", "2.0"),
-            //    new XElement("Dane", new XElement("Test", "1.0"),
-            //     new XElement("Nabywca",
-            //         new XElement("NabywcaAdres", new XAttribute("is_valid", _rNabywcaAdres), _NabywcaAdres),
-            //         new XElement("NabywcaKod", new XAttribute("is_valid", _rNabywcaKod), _NabywcaKod),
-            //         new XElement("NabywcaMiejscowosc", new XAttribute("is_valid", _rNabywcaMiejscowosc), _NabywcaMiejscowosc),
-            //         new XElement("NabywcaNazwa", new XAttribute("is_valid", _rNabywcaNazwa), _NabywcaNazwa),
-            //         new XElement("NabywcaNip", new XAttribute("is_valid", _rNabywcaNip), _NabywcaNip)
-            //    ),
-            //    new XElement("Sprzedawca",
-            //         new XElement("SprzedawcaAdres", new XAttribute("is_valid", _rSprzedawcaAdres), _SprzedawcaAdres),
-            //         new XElement("SprzedawcaKod", new XAttribute("is_valid", _rSprzedawcaKod), _SprzedawcaKod),
-            //         new XElement("SprzedawcaMiejscowosc", new XAttribute("is_valid", _rSprzedawcaMiejscowosc), _SprzedawcaMiejscowosc),
-            //         new XElement("SprzedawcaNazwa", new XAttribute("is_valid", _rSprzedawcaNazwa), _SprzedawcaNazwa),
-            //         new XElement("SprzedawcaNip", new XAttribute("is_valid", _rSprzedawcaNip), _SprzedawcaNip),
-            //         new XElement("KontoBankowe", new XAttribute("is_valid", _rKontoBankowe), _KontoBankowe)
-            //    ),
-            //    new XElement("Numeracja_i_daty",
-            //         new XElement("NrFaktury", new XAttribute("is_valid", _rNrFaktury), _NrFaktury),
-            //         new XElement("FakturaKorygowana", new XAttribute("is_valid", _rFakturaKorygowana), _FakturaKorygowana),
-            //         new XElement("Korygujaca", new XAttribute("is_valid", _rKorygujaca), _Korygujaca),
-            //         new XElement("PrzyczynaKorekty", new XAttribute("is_valid", _rPrzyczynaKorekty), _PrzyczynaKorekty),
-            //         new XElement("DataSprzedazy", new XAttribute("is_valid", _rDataSprzedazy), _DataSprzedazy),
-            //         new XElement("DataWplywu", new XAttribute("is_valid", _rDataWplywu), _DataWplywu),
-            //         new XElement("DataWystawienia", new XAttribute("is_valid", _rDataWystawienia), _DataWystawienia),
-            //         new XElement("MiesiacKsiegowy", new XAttribute("is_valid", _rMiesiacKsiegowy), _MiesiacKsiegowy)
-            //         ),
-            //    new XElement("Kwoty",
-            //         new XElement("NrZamowienia", new XAttribute("is_valid", _rNrZamowienia), _NrZamowienia),
-            //         // new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCategoryDesc), _CategoryDesc),
-            //         new XElement("CzyNieKompletnaPozycja", new XAttribute("is_valid", _rCzyNieKompletnaPozycja), _CzyNieKompletnaPozycja),
-            //         //new XElement("Kategoria", new XAttribute("is_valid", _rKategoria), _Kategoria),
-            //         //new XElement("KategoriaId", new XAttribute("is_valid",_rKategoriaId), _KategoriaId),
-            //         new XElement("Waluta", new XAttribute("is_valid", _rWaluta), _Waluta),
-            //         new XElement("KursWaluty", new XAttribute("is_valid", _rKursWaluty), _KursWaluty),
-            //            new XElement("Pozycje",
-            //            from poz in _listaPozycji
-            //            where poz.IdDoc == docid
-            //            select new XElement("pozycja", new XAttribute("is_valid", poz.Validation),
-            //                new XElement("Nazwa", poz.Nazwa),
-            //                new XElement("Brutto", poz.Brutto),
-            //                new XElement("Cena", poz.Cena),
-            //                new XElement("IdProductField", poz.IdProduct),
-            //                new XElement("Ilosc", poz.Ilosc),
-            //                new XElement("Jednostka", poz.Jednostka),
-            //                new XElement("Netto", poz.Netto),
-            //                new XElement("StawkaVAT", poz.StawkaVAT),
-            //                new XElement("VAT", poz.Vat),
-            //                new XElement("product_code", poz.Product_code)
-            //            ),
-            //         new XElement("BruttoWalutaPodstawowa", new XAttribute("is_valid", _rBruttoWalutaPodstawowa), _BruttoWalutaPodstawowa),
-            //         new XElement("NettoWalutaPodstawowa", new XAttribute("is_valid", _rNettoWalutaPodstawowa), _NettoWalutaPodstawowa),
-            //         new XElement("RazemNetto", new XAttribute("is_valid", _rRazemNetto), _RazemNetto),
-            //         new XElement("RazemVAT", new XAttribute("is_valid", _rRazemVAT), _RazemVAT),
-            //         new XElement("VatWalutaPodstawowa", new XAttribute("is_valid", _rVatWalutaPodstawowa), _VatWalutaPodstawowa),
-            //         new XElement("RazemBrutto", new XAttribute("is_valid", _rRazemBrutto), _RazemBrutto),
-            //         new XElement("SposobPlatnosci", new XAttribute("is_valid", _rSposobPlatnosci), _SposobPlatnosci),
-            //         new XElement("TerminPlatnosci", new XAttribute("is_valid", _rTerminPlatnosci), _TerminPlatnosci),
-            //         new XElement("Zaplacono", new XAttribute("is_valid", _rZaplacono), _Zaplacono)
-            //    )
-            //    ))));
-
-            //string longnazwa = _documentName.ToString().Replace('/', '_');
-            //string nazwa = longnazwa.Substring(0, longnazwa.Length - 4);
+            if (_NabywcaNip ==null)
+            { goto Exit; }
 
             string filename = name + "(" + start + "-" + end + ").txt";
 
@@ -3303,7 +3284,7 @@ namespace nsTEST_Skanuj_to
 
                 }
             }
-
+        Exit:;
             _rNabywcaAdres = string.Empty;
             _NabywcaAdres = string.Empty;
             _rNabywcaKod = string.Empty;
