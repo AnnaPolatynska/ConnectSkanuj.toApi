@@ -1194,7 +1194,7 @@ namespace nsTEST_Skanuj_to
             }
         } // SelectError(string name)
 
-       
+
 
 
         public void SelectPages_Id(int idDoc)
@@ -1338,7 +1338,7 @@ namespace nsTEST_Skanuj_to
                         //}
                         //catch
                         //{
-                        
+
                         //}
                         outputDocument.Save(pdfPath + "\\" + filenamePDF);
                         //Koniec:;
@@ -1426,49 +1426,32 @@ namespace nsTEST_Skanuj_to
                     {
                         program.CreateXML(idDoc, nameDoc, startpage, endpage);//OK zapis danych do xml.
 
-
                         //TODO Gdy wygeneruje przenieś do folderu zrealizowane
-                            string pdf_file = (nameDoc + ".pdf").ToString();
-                            string pdfFile = pdf_file;
-                            string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
-                            string okPath = System.Configuration.ConfigurationManager.AppSettings["okPath"].ToString();
+                        string startPath = System.Configuration.ConfigurationManager.AppSettings["startPath"].ToString();
+                        string okPath = System.Configuration.ConfigurationManager.AppSettings["okPath"].ToString();
+                        if (!System.IO.Directory.Exists(okPath))
+                        {
+                            System.IO.Directory.CreateDirectory(okPath);
+                        }
+                        System.IO.Directory.SetCurrentDirectory(okPath);
 
-                            //tworzy katalog dla błędnych plików
-                            string errorPath = System.Configuration.ConfigurationManager.AppSettings["errorPath"].ToString();
-                            if (!System.IO.Directory.Exists(okPath))
-                            {
-                                System.IO.Directory.CreateDirectory(okPath);
-                            }
-                            System.IO.Directory.SetCurrentDirectory(startPath);
-                            string sourceFile = System.IO.Path.Combine(startPath, pdfFile);
-                            string errorFile = System.IO.Path.Combine(okPath, pdfFile);
-                            System.IO.FileInfo fi = new FileInfo(okPath + pdfFile);
+                        string currentOKDirName = System.IO.Directory.GetCurrentDirectory();
+                       
+                        string okpath = currentOKDirName;
+                        string FileName = nameDoc + ".pdf";
 
-                            if (System.IO.Directory.Exists(startPath))
-                            {
-                                try
-                                {
-                                    errorFile = Path.Combine(okPath, pdfFile);
-                                    System.IO.File.Copy(pdf_file, pdf_file, true);
-                                    pdfFile = Path.GetFileName(pdf_file);
-                                    try
-                                    {
-                                        fi.Delete();
-                                    }
-                                    catch (System.IO.IOException ex) { program.WriteToFile(DateTime.Now + " Dokument " + fi + " zgłosił " + ex.Message); }
+                        string destinationFile = okpath +"/"+ FileName.ToString();
+                        string sourceFile = startPath + "/" + FileName.ToString();
 
-                                }
-                                catch { program.WriteToFile(DateTime.Now + " Dokument " + pdfFile + " o id " + idDoc + " nie znajduje się w katalogu " + startPath + "."); }
+                        Console.WriteLine("currentDirName " + currentOKDirName +" sourceFile "+ sourceFile + " destinationFile " + destinationFile);
 
-                            }
-                            else { program.WriteToFile("Ścieżka pliku " + pdfFile + " nie istnieje. Program zaprzestał dalszego przetwarzania."); }
-                        
+                        System.IO.File.Move(sourceFile, destinationFile);
 
 
                     }
                     catch
                     {
-                       
+
                         program.WriteToFile(DateTime.Now + " Poblem z wygenerowaniem xml (dokument - " + nameDoc + " " + idDoc + ").");
                         program.SelectError(idDoc);
                         program.UpdateErrorDB(idDoc);
@@ -2754,7 +2737,7 @@ namespace nsTEST_Skanuj_to
                 string rozp17 = (data["attributes"]["NabywcaNip"]["is_valid"]).ToString();
                 int statusA17 = data["attributes"]["NabywcaNip"]["status"];
                 string value17 = (data["attributes"]["NabywcaNip"]["value"]);
-               
+
                 _NabywcaNip = value17;
                 _rNabywcaNip = rozp17;
                 string atr17 = "NabywcaNip ";
@@ -2769,7 +2752,7 @@ namespace nsTEST_Skanuj_to
                 }
             }
             catch { }
-        
+
             try
             {
                 string rozp18 = (data["attributes"]["NettoWalutaPodstawowa"]["is_valid"]).ToString();
@@ -3095,10 +3078,10 @@ namespace nsTEST_Skanuj_to
                 }
             }
             catch { }
-           
+
             Console.WriteLine(" ");
             Console.WriteLine("GetDataFromDoc " + content);
-        
+
             return Execute<DocumentOneXt>(request);
         }//GetDataFromDoc(int id)
 
@@ -3239,7 +3222,7 @@ namespace nsTEST_Skanuj_to
                ))));
 
 
-            if (_NabywcaNip ==null)
+            if (_NabywcaNip == null)
             { goto Exit; }
 
             string filename = name + "(" + start + "-" + end + ").txt";
@@ -3284,6 +3267,10 @@ namespace nsTEST_Skanuj_to
 
                 }
             }
+
+            Program program = new Program();
+
+           
         Exit:;
             _rNabywcaAdres = string.Empty;
             _NabywcaAdres = string.Empty;
